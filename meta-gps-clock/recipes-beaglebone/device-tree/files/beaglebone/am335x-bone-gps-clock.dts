@@ -1,0 +1,33 @@
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+
+/ {
+	model = "TI AM335x BeagleBone";
+	compatible = "ti,am335x-bone", "ti,am33xx";
+};
+
+&ldo3_reg {
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <3300000>;
+	regulator-always-on;
+};
+
+&mmc1 {
+	vmmc-supply = <&ldo3_reg>;
+};
+
+&am33xx_pinmux {
+	bb_uart4_pins: pinmux_bb_uart4_pins {
+		/* 0x70 == P9.11 uart4_rx mode 6, 0x74 == P9.13 uart4_tx mode 6 */
+		pinctrl-single,pins = <0x070 0x26>, <0x074 0x06>;
+	};
+};
+
+&uart4 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&bb_uart4_pins>;
+};
+

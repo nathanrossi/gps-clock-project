@@ -1,0 +1,33 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone", "ti,beaglebone-back";
+
+	part-number = "GPS-CLOCK-OVERLAY";
+	version = "00A0";
+
+	exclusive-user =
+		"P9.11", "P9.13", /* SERIAL 4 RX/TX */
+		"uart5";
+
+	fragment@0 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			bb_uart5_pins: pinmux_bb_uart5_pins {
+				/* 0x70 == P9.11 uart5_rx mode 6, 0x74 == P9.13 uart5_tx mode 6 */
+				pinctrl-single,pins = <0x070 0x26>, <0x074 0x06>;
+			};
+		};
+	};
+
+	fragment@1 {
+		/* Serial 4 == uart5 (dt) */
+		target = <&uart5>;
+		__overlay__ {
+			status = "okay";
+			pinctrl-name = "default";
+			pinctrl-0 = <&bb_uart5_pins>;
+		};
+	};
+};
