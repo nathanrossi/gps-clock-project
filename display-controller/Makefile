@@ -6,15 +6,22 @@ ICEPACK=$(BASEPROGS)/icestorm/icepack/icepack
 IVERILOG=iverilog
 VVP=vvp
 
-all: simple.bin
+all: bitstream tests
 
 tests: $(patsubst tests/%.v,tests/obj/%.vvp,$(shell ls tests/test-*.v))
 
+bitstream: obj/top.bin
+
 clean:
-	-rm *.bin *.asc *.blif *.vcd
+	-rm *.vcd
+	-rm -rf obj/
 	-rm -rf tests/obj/
 
-.PHONY: all clean test
+.PHONY: all clean tests bitstream
+
+#
+# Tests
+#
 
 tests/obj/test-display-driver-simple.vvp: tests/test-display-driver-simple.v display-driver.v tests/helpers.v
 
@@ -23,13 +30,22 @@ tests/obj/test-%.vvp:
 	$(IVERILOG) -o $@ $^
 	$(VVP) $@ -lxt2
 
+#
+# Bistream/Synth/etc.
+#
+
+obj/top.blif: top.v display-driver.v
+
 # synth, pnr, bitmap
-%.blif:
+obj/%.blif:
+	-mkdir -p $$(dirname $@)
 	$(YOSYS) -p 'synth_ice40 -top top -blif $@' $^
 
-%.asc: %.blif %.pcf
+obj/%.asc: obj/%.blif %.pcf
+	-mkdir -p $$(dirname $@)
 	$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^))
 
-%.bin: %.asc
+obj/%.bin: obj/%.asc
+	-mkdir -p $$(dirname $@)
 	$(ICEPACK) $^ $@
 
