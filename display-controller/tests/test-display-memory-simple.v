@@ -38,7 +38,7 @@ module test_display_memory_simple;
 		wdata = 'h000000;
 		wen = 0;
 
-		@(posedge clk);
+		@(negedge clk);
 
 		// write some data into the first line
 		for (i = 0; i < 32; i = i + 1) begin
@@ -46,7 +46,7 @@ module test_display_memory_simple;
 			wcol = i;
 			rcol = i;
 			wen = 1;
-			@(posedge clk);
+			@(negedge clk);
 			//helpers.assert_eq(rdata, 'h111111);
 		end
 
@@ -57,7 +57,7 @@ module test_display_memory_simple;
 			wcol = i;
 			rcol = i;
 			wen = 1;
-			@(posedge clk);
+			@(negedge clk);
 			helpers.assert_eq(rdata, 'hffffff);
 		end
 
@@ -68,7 +68,7 @@ module test_display_memory_simple;
 			wcol = i;
 			rcol = i;
 			wen = 0;
-			@(posedge clk);
+			@(negedge clk);
 			helpers.assert_eq(rdata, 'h111111);
 		end
 
@@ -79,7 +79,7 @@ module test_display_memory_simple;
 			wcol = i;
 			rcol = i;
 			wen = 0;
-			@(posedge clk);
+			@(negedge clk);
 			helpers.assert_eq(rdata, 'hffffff);
 		end
 

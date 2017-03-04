@@ -2,13 +2,14 @@
 module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk);
 	input clk;
 	wire clk;
-	reg [7:0] divider = 0;
+	reg [12:0] divider = 0;
 
 	// divide 2
 	always @(posedge clk) begin
 		divider = divider + 1;
 	end
-	wire clk_d2 = divider[1];
+	//wire clk_disp = divider[7];
+	wire clk_disp = clk;
 
 	output led0, led1, led2, led3, led4;
 	assign led0 = 0;
@@ -30,9 +31,11 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 
 	display_driver #(
 		.rows(8),
-		.columns(32)
+		.columns(32),
+		.cycles(256),
+		.row_post(8)
 	) u_driver (
-		.clk(clk),
+		.clk(clk_disp),
 		.rst(rst),
 		.row(row),
 		.column(column),
@@ -41,6 +44,10 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.lat(lat),
 		.oclk(oclk)
 	);
+
+	assign a0 = row[0];
+	assign a1 = row[1];
+	assign a2 = row[2];
 
 	reg mem_flip = 0, mem_wen = 0;
 	wire [23:0] mem_i;
@@ -59,7 +66,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.columns(32),
 		.width(24)
 	) u_memory (
-		.clk(clk),
+		.clk(clk_disp),
 		.wen(mem_wen),
 		.flip(mem_flip),
 		.wrow(row),
@@ -70,32 +77,23 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.rdata(mem_o)
 	);
 
+	wire [2:0] rgb;
 
-	assign a0 = row[0];
-	assign a1 = row[1];
-	assign a2 = row[2];
+	display_color_encoder #(
+		.cyclewidth(8)
+	) u_color_encoder (
+		.clk(clk_disp),
+		.pixel(mem_o),
+		.cycle(cycle),
+		.rgb(rgb)
+	);
 
-	// set directly from memory
-	//assign r0 = |mem_o[7:0];
-	//assign g0 = |mem_o[15:8];
-	//assign b0 = |mem_o[23:16];
-	//assign r1 = |mem_o[7:0];
-	//assign g1 = |mem_o[15:8];
-	//assign b1 = |mem_o[23:16];
-
-	assign r0 = mem_o[0];
-	assign g0 = mem_o[8];
-	assign b0 = mem_o[16];
-	assign r1 = mem_o[0];
-	assign g1 = mem_o[8];
-	assign b1 = mem_o[16];
-
-	//assign r0 = |mem_o[2:0];
-	//assign g0 = |mem_o[5:3];
-	//assign b0 = |mem_o[7:6];
-	//assign r1 = |mem_o[10:8];
-	//assign g1 = |mem_o[13:11];
-	//assign b1 = |mem_o[15:14];
+	assign r0 = rgb[0];
+	assign g0 = rgb[1];
+	assign b0 = rgb[2];
+	assign r1 = rgb[0];
+	assign g1 = rgb[1];
+	assign b1 = rgb[2];
 
 endmodule
 

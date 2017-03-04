@@ -17,14 +17,14 @@ module display_memory(clk, flip, wen, wrow, wcol, rrow, rcol, wdata, rdata);
 		$display("_addrwidth = %d", _addrwidth);
 		$readmemh("display-data.hex", memory);
 		//for (ik = 0; ik < _addrwidth - 1; ik = ik + 1) begin
-			//memory[ik] = 'hff00ff; // set to high for now, so we get all leds
+			//memory[ik] = 'h0f0f0f; // set to high for now, so we get all leds
 		//end
 	end
 
 	always @(posedge clk) begin
 		if (wen)
 			memory[{!flip, wrow, wcol}] <= wdata;
-		rdata <= memory[{!flip, wrow, wcol}];
+		rdata <= memory[{flip, wrow, wcol}];
 	end
 
 endmodule

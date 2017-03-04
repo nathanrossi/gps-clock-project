@@ -31,37 +31,47 @@ module test_display_driver_simple;
 
 		clk = 0;
 		rst = 1;
-		@(posedge clk)
+		@(negedge clk)
 		rst = 0;
 
 		repeat (32) begin
+			$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [row_fetch]", $time, cycle, row, column, oe, lat);
+			helpers.assert_eq(column, i);
+			helpers.assert_eq(lat, 1);
+			helpers.assert_eq(oe, 1);
+			helpers.assert_eq(oclk, 0);
+			@(negedge clk);
+
 			for (i = 0; i < 32; i = i + 1) begin
-				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [load %d]", $time, cycle, row, column, oe, lat, i);
+				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [col_fetch %d]", $time, cycle, row, column, oe, lat, i);
 				helpers.assert_eq(column, i);
 				helpers.assert_eq(lat, 1);
 				helpers.assert_eq(oe, 1);
 				helpers.assert_eq(oclk, 1);
-				@(posedge clk);
+				@(negedge clk);
+				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [col_load %d]", $time, cycle, row, column, oe, lat, i);
 				helpers.assert_eq(column, i);
 				helpers.assert_eq(lat, 1);
 				helpers.assert_eq(oe, 1);
 				helpers.assert_eq(oclk, 0);
-				@(posedge clk);
+				@(negedge clk);
 			end
-			@(posedge clk); // latch
+
+			@(negedge clk); // latch
 			$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [latch]", $time, cycle, row, column, oe, lat);
 			helpers.assert_eq(lat, 0);
 			helpers.assert_eq(oe, 1);
 			helpers.assert_eq(oclk, 0);
+
 			repeat (8) begin
-				@(posedge clk); // oe enable dewell
+				@(negedge clk); // oe enable dewell
 				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [oe dewell]", $time, cycle, row, column, oe, lat);
 				helpers.assert_eq(lat, 1);
 				helpers.assert_eq(oe, 0);
 				helpers.assert_eq(oclk, 0);
 			end
-			@(posedge clk); // clear
-			$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [clear]", $time, cycle, row, column, oe, lat);
+			@(negedge clk); // clear
+			$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [oe clear]", $time, cycle, row, column, oe, lat);
 			helpers.assert_eq(lat, 1);
 			helpers.assert_eq(oe, 1);
 			helpers.assert_eq(oclk, 0);

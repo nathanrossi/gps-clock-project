@@ -51,6 +51,8 @@ module display_driver(clk, rst, row, column, cycle, oe, lat, oclk);
 	reg [$clog2(row_post)-1:0] r_post = 0;
 
 	integer state = 0;
+
+	parameter _row_fetch = 0, _col_fetch = 1, _col_load = 2, _row_latch = 3, _row_oe = 4, _row_oe_clear = 5;
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			cycle <= 0;
@@ -59,46 +61,51 @@ module display_driver(clk, rst, row, column, cycle, oe, lat, oclk);
 			r_post <= 0;
 			oe <= 1;
 			lat <= 1;
-			oclk = 0;
+			oclk <= 0;
 			state <= 0;
 		end else begin
-			if (state == 0) begin // raise oclk
+			if (state == _row_fetch) begin // prepare row fetch
 				lat <= 1;
 				oe <= 1;
-				oclk = 0;
-				state <= 1;
-			end else if (state == 1) begin // clk low, load next
+				oclk <= 0;
+				state <= _col_fetch;
+			end else if (state == _col_fetch) begin // prepare column fetch
+				lat <= 1;
+				oe <= 1;
+				oclk <= 0;
+				state <= _col_load;
+			end else if (state == _col_load) begin // clk low, load next
 				// if this is the last column of the row, move latch phase
 				if (column >= columns - 1) begin
 					column <= 0;
-					state <= 2;
+					state <= _row_latch;
 				end else begin
 					column <= column + 1;
-					state <= 0;
+					state <= _col_fetch;
 				end
 				lat <= 1;
 				oe <= 1;
-				oclk = 1;
-			end else if (state == 2) begin // latch the row
+				oclk <= 1;
+			end else if (state == _row_latch) begin // latch the row
 				// keeping the row at the same address as the row
 				// being latched.
-				state <= 3;
+				state <= _row_oe;
 				lat <= 0;
 				oe <= 1;
-				oclk = 0;
-			end else if (state == 3) begin // output hold the row,
+				oclk <= 0;
+			end else if (state == _row_oe) begin // output hold the row,
 				// hold the output enable low, on the latched/loaded
 				// row.
-				if (r_post >= row_post -1) begin
-					state <= 4;
+				if (r_post >= row_post - 1) begin
+					state <= _row_oe_clear;
 					r_post <= 0;
 				end else begin
 					r_post <= r_post + 1;
 				end
 				lat <= 1;
+				oclk <= 0;
 				oe <= 0;
-				oclk = 0;
-			end else if (state == 4) begin // move to next row
+			end else if (state == _row_oe_clear) begin
 				if (row >= rows - 1) begin
 					// Next cycle, completed the set of rows
 					row <= 0;
@@ -117,10 +124,10 @@ module display_driver(clk, rst, row, column, cycle, oe, lat, oclk);
 				end else begin
 					row <= row + 1;
 				end
-				state <= 0;
+				state <= _row_fetch;
 				lat <= 1;
+				oclk <= 0;
 				oe <= 1;
-				oclk = 0;
 			end
 		end
 	end

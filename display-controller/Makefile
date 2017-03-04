@@ -23,11 +23,13 @@ clean:
 # Tests
 #
 
-tests/obj/test-display-driver-simple.vvp: tests/test-display-driver-simple.v display-driver.v tests/helpers.v
-tests/obj/test-display-memory-simple.vvp: tests/test-display-memory-simple.v display-memory.v tests/helpers.v
-tests/obj/test-top.vvp: tests/test-top.v top.v display-memory.v display-driver.v tests/helpers.v
+tests/obj/test-display-driver-simple.vvp: display-driver.v
+tests/obj/test-display-memory-simple.vvp: display-memory.v
+tests/obj/test-display-color-encoder-simple.vvp: display-color-encoder.v
+tests/obj/test-spi-slave-simple.vvp: spi-slave.v
+tests/obj/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v
 
-tests/obj/test-%.vvp:
+tests/obj/test-%.vvp: tests/test-%.v tests/helpers.v
 	-mkdir -p tests/obj
 	$(IVERILOG) -o $@ $^
 	$(VVP) $@ -lxt2
@@ -36,7 +38,7 @@ tests/obj/test-%.vvp:
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: display-memory.v display-driver.v
+obj/top.blif: display-memory.v display-driver.v display-color-encoder.v
 
 # synth, pnr, bitmap
 obj/%.blif: %.v
