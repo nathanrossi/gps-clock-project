@@ -1,5 +1,5 @@
 
-module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk);
+module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
 	input clk;
 	wire clk;
 	reg [12:0] divider = 0;
@@ -17,6 +17,66 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	assign led2 = 0;
 	assign led3 = 0;
 	assign led4 = 1;
+
+	// buffer load logic
+	reg started = 0, flip_buffer = 0;
+	wire [7:0] load_data;
+	reg [23:0] load_pixel = 0;
+	reg [2:0] load_row = 7;
+	reg [4:0] load_col = 31; // defaulted to the end so that it wraps on start
+	wire load_valid, load_sot, load_eot;
+	wire flip_safe;
+	integer load_pixel_count = 0;
+	always @(posedge clk_disp) begin
+		if (flip_buffer == 1) begin
+			if (flip_safe == 1) begin
+				mem_flip <= !mem_flip;
+				flip_buffer <= 0;
+			end
+		end else begin
+			if (load_sot == 1 && load_valid == 1) begin
+				// first byte, setup
+				load_pixel <= 0;
+				load_pixel_count <= 0;
+				load_row <= 7;
+				load_col <= 31;
+				mem_wen <= 0;
+				flip_buffer <= 0;
+				started <= 1;
+			end else if(started == 1 && load_eot == 1) begin
+				load_pixel <= 0;
+				load_pixel_count <= 0;
+				load_row <= 7;
+				load_col <= 31;
+				mem_wen <= 0;
+				flip_buffer <= 1;
+				started <= 0;
+			end else if (started == 1 && load_valid == 1) begin
+				load_pixel <= {load_pixel[15:0], load_data};
+				if (load_pixel_count == 1) begin
+					load_pixel_count <= 0;
+					if (load_col >= 31) begin
+						load_col <= 0;
+						if (load_row >= 7) begin
+							load_row <= 0;
+						end else begin
+							load_row <= load_row + 1;
+						end
+					end else begin
+						load_col <= load_col + 1;
+					end
+					mem_wen <= 1;
+				end else begin
+					load_pixel_count <= load_pixel_count + 1;
+					mem_wen <= 0;
+				end
+				flip_buffer <= 0;
+			end else begin
+				mem_wen <= 0;
+				flip_buffer <= 0;
+			end
+		end
+	end
 
 	output r0, g0, b0;
 	output r1, g1, b1;
@@ -40,6 +100,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.row(row),
 		.column(column),
 		.cycle(cycle),
+		.safe_flip(flip_safe),
 		.oe(oe),
 		.lat(lat),
 		.oclk(oclk)
@@ -50,16 +111,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	assign a2 = row[2];
 
 	reg mem_flip = 0, mem_wen = 0;
-	wire [23:0] mem_i;
 	wire [23:0] mem_o;
-
-	//assign mem_i = cycle;
-
-	//always @(posedge clk) begin
-		//if (cycle == 0 && row == 7 && column == 31) begin
-			//mem_flip = !mem_flip;
-		//end
-	//end
 
 	display_memory #(
 		.rows(8),
@@ -69,11 +121,11 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.clk(clk_disp),
 		.wen(mem_wen),
 		.flip(mem_flip),
-		.wrow(row),
-		.wcol(column),
+		.wrow(load_row),
+		.wcol(load_col),
 		.rrow(row),
 		.rcol(column),
-		.wdata(mem_i),
+		.wdata(load_pixel),
 		.rdata(mem_o)
 	);
 
@@ -94,6 +146,21 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	assign r1 = rgb[0];
 	assign g1 = rgb[1];
 	assign b1 = rgb[2];
+
+	input wire spi_sclk, spi_ss, spi_mosi;
+	output wire spi_miso;
+	spi_slave u_spi_slave (
+		.clk(clk_disp),
+		.rst(rst),
+		.sclk(spi_sclk),
+		.ss(spi_ss),
+		.mosi(spi_mosi),
+		.miso(spi_miso),
+		.data(load_data),
+		.valid(load_valid),
+		.sot(load_sot),
+		.eot(load_eot)
+	);
 
 endmodule
 

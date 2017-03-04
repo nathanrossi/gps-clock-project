@@ -2,7 +2,7 @@
 module spi_slave(clk, rst, sclk, ss, mosi, miso, data, valid, sot, eot);
 	input wire clk, rst, sclk, ss;
 	input wire mosi;
-	output wire miso; // not used.
+	output reg miso = 0; // not used.
 
 	// Operation
 	// ---------

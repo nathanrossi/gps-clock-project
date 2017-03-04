@@ -27,7 +27,7 @@ tests/obj/test-display-driver-simple.vvp: display-driver.v
 tests/obj/test-display-memory-simple.vvp: display-memory.v
 tests/obj/test-display-color-encoder-simple.vvp: display-color-encoder.v
 tests/obj/test-spi-slave-simple.vvp: spi-slave.v
-tests/obj/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v
+tests/obj/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-slave.v
 
 tests/obj/test-%.vvp: tests/test-%.v tests/helpers.v
 	-mkdir -p tests/obj
@@ -38,7 +38,7 @@ tests/obj/test-%.vvp: tests/test-%.v tests/helpers.v
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: display-memory.v display-driver.v display-color-encoder.v
+obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-slave.v
 
 # synth, pnr, bitmap
 obj/%.blif: %.v
