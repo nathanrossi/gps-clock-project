@@ -8,14 +8,14 @@ VVP=vvp
 
 all: bitstream tests
 
-tests: $(patsubst tests/%.v,tests/obj/%.vvp,$(shell ls tests/test-*.v))
+tests: $(patsubst tests/%.v,obj/tests/%.vvp,$(shell ls tests/test-*.v))
 
 bitstream: obj/top.bin
 
 clean:
 	-rm *.vcd
 	-rm -rf obj/
-	-rm -rf tests/obj/
+	-rm -rf obj/tests/
 
 .PHONY: all clean tests bitstream
 
@@ -23,14 +23,14 @@ clean:
 # Tests
 #
 
-tests/obj/test-display-driver-simple.vvp: display-driver.v
-tests/obj/test-display-memory-simple.vvp: display-memory.v
-tests/obj/test-display-color-encoder-simple.vvp: display-color-encoder.v
-tests/obj/test-spi-slave-simple.vvp: spi-slave.v
-tests/obj/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-slave.v
+obj/tests/test-display-driver-simple.vvp: display-driver.v
+obj/tests/test-display-memory-simple.vvp: display-memory.v
+obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
+obj/tests/test-spi-slave-simple.vvp: spi-slave.v
+obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-slave.v
 
-tests/obj/test-%.vvp: tests/test-%.v tests/helpers.v
-	-mkdir -p tests/obj
+obj/tests/test-%.vvp: tests/test-%.v tests/helpers.v
+	-mkdir -p obj/tests
 	$(IVERILOG) -o $@ $^
 	$(VVP) $@ -lxt2
 
