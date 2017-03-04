@@ -65,7 +65,7 @@ module display_driver(clk, rst, row, column, cycle, oe, lat, oclk);
 			if (state == 0) begin // raise oclk
 				lat <= 1;
 				oe <= 1;
-				oclk = 1;
+				oclk = 0;
 				state <= 1;
 			end else if (state == 1) begin // clk low, load next
 				// if this is the last column of the row, move latch phase
@@ -78,7 +78,7 @@ module display_driver(clk, rst, row, column, cycle, oe, lat, oclk);
 				end
 				lat <= 1;
 				oe <= 1;
-				oclk = 0;
+				oclk = 1;
 			end else if (state == 2) begin // latch the row
 				// keeping the row at the same address as the row
 				// being latched.

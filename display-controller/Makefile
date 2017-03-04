@@ -24,6 +24,8 @@ clean:
 #
 
 tests/obj/test-display-driver-simple.vvp: tests/test-display-driver-simple.v display-driver.v tests/helpers.v
+tests/obj/test-display-memory-simple.vvp: tests/test-display-memory-simple.v display-memory.v tests/helpers.v
+tests/obj/test-top.vvp: tests/test-top.v top.v display-memory.v display-driver.v tests/helpers.v
 
 tests/obj/test-%.vvp:
 	-mkdir -p tests/obj
@@ -34,7 +36,7 @@ tests/obj/test-%.vvp:
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: top.v display-driver.v
+obj/top.blif: top.v display-memory.v display-driver.v
 
 # synth, pnr, bitmap
 obj/%.blif:
