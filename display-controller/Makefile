@@ -36,12 +36,12 @@ tests/obj/test-%.vvp:
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: top.v display-memory.v display-driver.v
+obj/top.blif: display-memory.v display-driver.v
 
 # synth, pnr, bitmap
-obj/%.blif:
+obj/%.blif: %.v
 	-mkdir -p $$(dirname $@)
-	$(YOSYS) -p 'synth_ice40 -top top -blif $@' $^
+	$(YOSYS) -p "synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $^
 
 obj/%.asc: obj/%.blif %.pcf
 	-mkdir -p $$(dirname $@)
