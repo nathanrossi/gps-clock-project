@@ -22,7 +22,7 @@ module spi_slave(clk, rst, sclk, ss, mosi, miso, data, valid, sot, eot);
 
 	output wire [7:0] data;
 	assign data = word;
-	output reg sot, eot, valid;
+	output reg sot = 0, eot = 0, valid = 0;
 
 	always @(posedge clk) begin
 		if (rst == 1) begin

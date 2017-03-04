@@ -2,9 +2,9 @@
 module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
 	input clk;
 	wire clk;
-	reg [12:0] divider = 0;
 
 	// divide 2
+	reg [63:0] divider = 'h0000000000000000;
 	always @(posedge clk) begin
 		divider = divider + 1;
 	end
@@ -19,6 +19,8 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	assign led4 = 1;
 
 	// buffer load logic
+	reg [4:0] brightness_flip = 'h4;
+
 	reg started = 0, flip_buffer = 0;
 	wire [7:0] load_data;
 	reg [23:0] load_pixel = 0;
@@ -28,6 +30,9 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	wire flip_safe;
 	integer load_pixel_count = 0;
 	always @(posedge clk_disp) begin
+		//if (flip_safe == 1) begin
+			//brightness_flip <=  divider[27:23];
+		//end
 		if (flip_buffer == 1) begin
 			if (flip_safe == 1) begin
 				mem_flip <= !mem_flip;
@@ -93,10 +98,11 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.rows(8),
 		.columns(32),
 		.cycles(256),
-		.row_post(8)
+		.row_post(32)
 	) u_driver (
 		.clk(clk_disp),
 		.rst(rst),
+		.brightness(brightness_flip),
 		.row(row),
 		.column(column),
 		.cycle(cycle),

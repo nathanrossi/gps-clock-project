@@ -14,7 +14,7 @@ module test_top;
 	initial begin
 		$dumpfile("test.vcd");
 		$dumpvars(0, test_top);
-		repeat(20000) begin
+		repeat(500000) begin
 			# 5 clk = !clk;
 			# 5 clk = !clk;
 			i = i + 1;

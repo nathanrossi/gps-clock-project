@@ -22,14 +22,17 @@
 // be achieved.
 //
 
-module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
+module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, lat, oclk);
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
 	parameter cycles = 256;
-	parameter row_post = 8; // the number of cycles to hold OE low before next row
+	parameter row_post = 32; // the number of cycles to hold OE low before next row
 
 	input clk, rst;
 	wire clk, rst;
+
+	// allow runtime brightness adjust
+	input wire [$clog2(row_post) - 1:0] brightness;
 
 	output safe_flip, oe, lat, oclk;
 	reg oe = 1, lat = 1;
@@ -185,7 +188,12 @@ module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 				_row_oe: begin
 					// this state holds the /oe signal active for row_post
 					// cycles, then moves to the _row_complete state.
-					lat <= 1; oe <= 0; oclk <= 0; safe_flip <= 0;
+					lat <= 1; oclk <= 0; safe_flip <= 0;
+					if (brightness >= r_post) begin
+						oe <= 0;
+					end else begin
+						oe <= 1;
+					end
 					if (r_post >= row_post - 1) begin
 						state <= _row_complete;
 						r_post <= 0;
