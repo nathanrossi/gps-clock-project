@@ -7,7 +7,7 @@ module display_color_encoder(clk, pixel, cycle, rgb);
 	input wire [(cyclewidth * 3) - 1:0] pixel;
 	input wire [cyclewidth - 1:0] cycle;
 
-	output reg [2:0] rgb = 0;
+	output reg [2:0] rgb = 3'b000;
 
 	// compare pixel rgb values independently to the cycle value, setting high
 	// or low on the output rgb bits

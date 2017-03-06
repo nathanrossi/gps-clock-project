@@ -9,13 +9,13 @@ module display_memory(clk, flip, wen, wrow, wcol, rrow, rcol, wdata, rdata);
 	input wire [$clog2(rows)-1:0] wrow, rrow;
 	input wire [$clog2(columns)-1:0] wcol, rcol;
 	input wire [width-1:0] wdata;
-	output reg [width-1:0] rdata;
+	output reg [width-1:0] rdata = {width{1'b0}};
 
 	reg [width-1:0] memory[0:_addrwidth - 1];
 	integer ik;
 	initial begin
 		$display("_addrwidth = %d", _addrwidth);
-		$readmemh("display-data.hex", memory);
+		$readmemh("initial-image-memory.hex", memory);
 		//for (ik = 0; ik < _addrwidth - 1; ik = ik + 1) begin
 			//memory[ik] = 'h000f00; // set to high for now, so we get all leds
 		//end

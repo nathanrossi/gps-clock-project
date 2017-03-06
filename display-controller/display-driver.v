@@ -27,12 +27,15 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 	parameter columns = 32; // number of bits per line
 	parameter cycles = 256;
 	parameter row_post = 32; // the number of cycles to hold OE low before next row
+	parameter dynamic_brightness = 0;
+	parameter [$clog2(row_post) - 1:0] default_brightness = {$clog2(row_post){1'b1}};
 
 	input clk, rst;
 	wire clk, rst;
 
 	// allow runtime brightness adjust
 	input wire [$clog2(row_post) - 1:0] brightness;
+	reg [$clog2(row_post) - 1:0] c_brightness = default_brightness;
 
 	output safe_flip, oe, lat, oclk;
 	reg oe = 1, lat = 1;
@@ -108,6 +111,8 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 	// <> move to load_addr if cycle ! wrap else move to frame hold
 	// <> flip safe here
 	//
+	//
+	integer latch_delay = 0;
 
 	integer state = 0;
 	parameter
@@ -129,6 +134,7 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 			column <= 0;
 			r_post <= 0;
 			state <= _load_addr;
+			latch_delay <= 0;
 		end else begin
 			case (state)
 				_load_addr: begin
@@ -183,13 +189,18 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 					// this state is used to disable the latch signal, for
 					// a clean transition to the /oe hold phase
 					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
-					state <= _row_oe;
+					if (latch_delay < 4) begin
+						latch_delay <= latch_delay + 1;
+					end else begin
+						state <= _row_oe;
+						latch_delay <= 0;
+					end
 				end
 				_row_oe: begin
 					// this state holds the /oe signal active for row_post
 					// cycles, then moves to the _row_complete state.
 					lat <= 1; oclk <= 0; safe_flip <= 0;
-					if (brightness >= r_post) begin
+					if (c_brightness >= r_post) begin
 						oe <= 0;
 					end else begin
 						oe <= 1;
@@ -209,7 +220,7 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 					if (row >= rows - 1) begin
 						// Next cycle, completed the set of rows
 						row <= 0;
-						if (cycle >= cycles - 1) begin
+						//if (cycle >= cycles - 1) begin
 							// Each complete of cycles is equivalent to a full
 							// vertical refresh of the display.
 							//
@@ -221,10 +232,13 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 							// encoder being synchronous.
 							cycle <= 0;
 							safe_flip <= 1;
-						end else begin
-							cycle <= cycle + 1;
-							safe_flip <= 0;
-						end
+							if (dynamic_brightness == 1) begin
+								c_brightness <= brightness;
+							end
+						//end else begin
+							//cycle <= cycle + 1;
+							//safe_flip <= 0;
+						//end
 					end else begin
 						row <= row + 1;
 						safe_flip <= 0;
