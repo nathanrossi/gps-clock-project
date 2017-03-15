@@ -13,7 +13,7 @@ VVP = vvp
 
 all: bitstream tests
 
-BROKEN = test-display-driver-simple
+BROKEN =
 TESTS = $(patsubst tests/%.v,%,$(shell ls tests/test-*.v))
 RUNTESTS = $(filter-out $(BROKEN),$(patsubst tests/%.v,%,$(TESTS)))
 
@@ -25,9 +25,7 @@ bitstream: obj/top.bin obj/top.asc
 
 clean:
 	@echo "[CLEAN] cleaning..."
-	$(Q)-rm *.vcd
-	$(Q)-rm -rf obj/
-	$(Q)-rm -rf obj/tests/
+	$(Q)-rm -rf *.vcd obj/
 
 .PHONY: all clean tests bitstream $(TESTS)
 
@@ -36,12 +34,10 @@ clean:
 #
 
 obj/tests/test-display-driver-simple.vvp: display-driver.v
-obj/tests/test-display-driver-mod2-simple.vvp: display-driver-mod2.v
-obj/tests/test-display-driver-mod3-simple.vvp: display-driver-mod3.v
 obj/tests/test-display-memory-simple.vvp: display-memory.v
 obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
 obj/tests/test-spi-slave-simple.vvp: spi-slave.v
-obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-driver-mod2.v display-color-encoder.v spi-slave.v
+obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-slave.v
 
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(Q)-mkdir -p obj/tests
@@ -65,7 +61,7 @@ initial-image-memory.hex: image-table.py
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: display-memory.v display-driver.v display-driver-mod2.v display-color-encoder.v spi-slave.v initial-image-memory.hex
+obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-slave.v initial-image-memory.hex
 
 # synth, pnr, bitmap
 obj/%.blif: %.v

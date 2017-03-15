@@ -22,23 +22,17 @@
 // be achieved.
 //
 
-module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, lat, oclk);
+module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
-	parameter cycles = 256;
-	parameter row_post = 32; // the number of cycles to hold OE low before next row
-	parameter dynamic_brightness = 0;
-	parameter [$clog2(row_post) - 1:0] default_brightness = {$clog2(row_post){1'b1}};
+	parameter bitdepth = 8;
+	parameter _depthcount = (2 ** bitdepth);
 
 	input clk, rst;
 	wire clk, rst;
 
-	// allow runtime brightness adjust
-	input wire [$clog2(row_post) - 1:0] brightness;
-	reg [$clog2(row_post) - 1:0] c_brightness = default_brightness;
-
 	output safe_flip, oe, lat, oclk;
-	reg oe = 1, lat = 1;
+	reg oe = 1, lat = 0;
 	reg oclk = 0;
 	reg safe_flip = 0;
 
@@ -51,17 +45,15 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 	reg [$clog2(columns)-1:0] column = 0;
 
 	// cycle counter
-	output [$clog2(cycles)-1:0] cycle;
-	reg [$clog2(cycles)-1:0] cycle = 0;
-
-	// row post dwell
-	reg [$clog2(row_post)-1:0] r_post = 0;
+	output [bitdepth-1:0] cycle;
+	reg [bitdepth-1:0] cycle = 0;
 
 	// Expected function use.
 	//
-	//
 	// -> col -> bram -> pwm -> out
 	//     1      1       1
+	// Takes 3 cycles/states for a addr change to reach the output
+	// Takes 2 cycles/states for a cycle change to reach the output
 	//
 	// load_addr
 	// <> (row and col addresses valid)
@@ -70,47 +62,52 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 	// load_encode
 	// <> (PWM encoded) (next col address valid)
 	//
-	// column pulse high
-	// <> (outputs valid) (ram output valid)
-	// <> (clk -> 1)
-	// column pulse low (same as load_encode)
-	// <> (PWM encoded) (next col address valid)
-	// <> (clk -> 0)
-	// column pulse high
-	// <> (outputs valid) (ram output valid)
-	// <> (clk -> 1)
-	// ....
-	// column pulse low
-	// <> (PWM encoded) (next col is invalid, move to latch/row)
-	// <> (clk -> 0)
-	//
-	// row latch pulse active
-	// <> (/lat -> 0)
-	// <> (clk -> 0)
-	// <> (row address still valid)
-	// row latch pulse inactive
+	// {
+	//     col pl ph
+	//     <> (outputs valid) (ram output valid)
+	//     <> (clk -> 1)
+	//     col pl pl
+	//     <> (PWM encoded) (next col address valid)
+	//     <> (clk -> 0)
+	//     ... 32 times
+	//     <> col == 0
+	// }
+	// col pl plath
 	// <> (/lat -> 1)
-	// <> (row address still valid)
+	// <> (col valid)
+	// <> (cycle valid)
+	// col pl platl
+	// <> (/lat -> 0)
 	//
-	// row oe hold
-	// <> (/oe -> 0)
-	// row hold (waiting for post charge to finish)
-	// ...
-	// 0 A, 1 A, 2 A, 3 A, 4 A, 5 A, 6 A, 7 A
-	// ...
-	// row oe hold (post = top)
-	// <> post <= 0
-	// row oe release
-	// <> (/oe -> 1)
-	// <> -> row complete
+	// {
+	//     {
+	//         col l ph
+	//         <> (outputs valid) (ram output valid)
+	//         <> (clk -> 1)
+	//         <> (/oe -> 0)
+	//         col l pl
+	//         <> (PWM encoded) (next col address valid)
+	//         <> (clk -> 0)
+	//         <> (/oe -> 0)
+	//         ... 32 times
+	//         <> col == 0
+	//     }
+	//     col l plath
+	//     <> (/oe -> 1)
+	//     <> (/lat -> 1)
+	//     <> (col valid)
+	//     <> (cycle valid)
+	//     col l platl
+	//     <> (/lat -> 0) (only latch with cycle != 0)
+	//     ... repeat cycle times
+	// }
 	//
 	// row complete
-	// <> row ++
-	// <> cycle ++
-	// <> frame ++
-	// <> move to load_addr if cycle ! wrap else move to frame hold
+	// <> cycle = 0
+	// <> row ++ (or wrap to next frame)
 	// <> flip safe here
 	//
+	// MOD2 - > cycle on the row, avoid row switching for pwm'ing of bits
 	//
 	integer latch_delay = 0;
 
@@ -119,41 +116,44 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 		_load_addr = 0,
 		_load_value = 1,
 		_load_encode = 2,
-		_col_ph = 3,
-		_col_pl = 4,
-		_row_lath = 5,
-		_row_latl = 6,
-		_row_oe = 7,
-		_row_complete = 8;
+		_colpl_ph = 3, // preload
+		_colpl_pl = 4,
+		_colpl_plath = 5, // preload latch
+		_colpl_platl = 6,
+		_colpl_platc = 7,
+		_coll_ph = 8, // load (aka load next, display current)
+		_coll_pl = 9,
+		_coll_plath = 10, // preload latch
+		_coll_platl = 11,
+		_coll_platc = 12,
+		_row_complete = 13;
 
 	always @(posedge clk) begin
 		if (rst == 1) begin
-			lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+			lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+			column <= 0;
 			cycle <= 0;
 			row <= 0;
-			column <= 0;
-			r_post <= 0;
 			state <= _load_addr;
-			latch_delay <= 0;
 		end else begin
 			case (state)
 				_load_addr: begin
 					// during this state wait for the address signals to
 					// propagate to the output of the regsters.
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
 					state <= _load_value;
 				end
 				_load_value: begin
 					// during this state wait for the bram to fetch and buffer
 					// the addressed value on its output.
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
 					state <= _load_encode;
 				end
 				_load_encode: begin
 					// during this state wait for the ecoded value to hit the
 					// output, update the column count.
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
-					state <= _col_ph;
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					state <= _colpl_ph;
 					// update the column addr
 					if (column >= columns - 1) begin
 						column <= 0;
@@ -161,84 +161,127 @@ module display_driver(clk, rst, brightness, row, column, cycle, safe_flip, oe, l
 						column <= column + 1;
 					end
 				end
-				_col_ph: begin
-					lat <= 1; oe <= 1; oclk <= 1; safe_flip <= 0;
-					state <= _col_pl;
+
+				//
+				// Preload phase
+				//
+				_colpl_ph: begin
+					lat <= 0; oe <= 1; oclk <= 1; safe_flip <= 0;
+					state <= _colpl_pl;
 				end
-				_col_pl: begin
-					// this state is a duplicate of the _load_encode state,
-					// however when the column is 0, move to the _row_lath
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
-					// update the column addr
-					if (column == 0) begin
-						state <= _row_lath;
-					end else if (column >= columns - 1) begin
+				_colpl_pl: begin
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					// Setup the column inc so that the outputs are valid in
+					// three states time
+					if (column == columns - 1) begin
 						column <= 0;
-						state <= _col_ph;
 					end else begin
 						column <= column + 1;
-						state <= _col_ph;
+					end
+					// move out of load after the last bit. This is not when
+					// column wraps, but the first cycle after it wraps
+					if (column == 0) begin
+						state <= _colpl_plath;
+					end else begin
+						state <= _colpl_ph;
 					end
 				end
-				_row_lath: begin
-					// this state is used to enable the latch signal
+				_colpl_plath: begin
 					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
-					state <= _row_latl;
+					// increment the cycle so that it is valid in 2 states
+					// time
+					column <= 0;
+					if (cycle == _depthcount - 1) begin
+						cycle <= 0;
+					end else begin
+						cycle <= cycle + 1;
+					end
+					state <= _colpl_platl;
 				end
-				_row_latl: begin
-					// this state is used to disable the latch signal, for
-					// a clean transition to the /oe hold phase
+				_colpl_platl: begin
+					// latch the just loaded values
 					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
-					if (latch_delay < 4) begin
-						latch_delay <= latch_delay + 1;
+					state <= _colpl_platc;
+				end
+				_colpl_platc: begin
+					// clear cycle, transition between lat->oe
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					state <= _coll_ph;
+					column <= column + 1;
+				end
+				//
+				// Pipelined load and OE display phase
+				//
+				_coll_ph: begin
+					lat <= 0; oe <= 0; oclk <= 1; safe_flip <= 0;
+					state <= _coll_pl;
+				end
+				_coll_pl: begin
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
+					// Setup the column inc so that the outputs are valid in
+					// two states time
+					if (column == columns - 1) begin
+						column <= 0;
 					end else begin
-						state <= _row_oe;
-						latch_delay <= 0;
+						column <= column + 1;
+					end
+					if (column == 0) begin
+						state <= _coll_plath;
+					end else begin
+						state <= _coll_ph;
 					end
 				end
-				_row_oe: begin
-					// this state holds the /oe signal active for row_post
-					// cycles, then moves to the _row_complete state.
-					lat <= 1; oclk <= 0; safe_flip <= 0;
-					if (c_brightness >= r_post) begin
-						oe <= 0;
+				_coll_plath: begin
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					// increment the cycle so that it is valid in 2 states
+					// time
+					column <= 0;
+					if (cycle >= _depthcount - 1) begin
+						cycle <= 0;
 					end else begin
-						oe <= 1;
+						cycle <= cycle + 1;
 					end
-					if (r_post >= row_post - 1) begin
+					state <= _coll_platl;
+				end
+				_coll_platl: begin
+					// latch the just loaded values
+					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+					state <= _coll_platc;
+				end
+				_coll_platc: begin
+					// clear cycle, transition between lat->oe
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					if (cycle == 1) begin
 						state <= _row_complete;
-						r_post <= 0;
 					end else begin
-						r_post <= r_post + 1;
+						state <= _coll_ph;
+						column <= column + 1;
 					end
 				end
+
+				//
+				// Handle completion of horiz refresh, and vert refresh
+				//
 				_row_complete: begin
 					// this state increments addresses and allows for a cycle
 					// to flip the frame buffer safely.
-					lat <= 1; oe <= 1; oclk <= 0;
+					lat <= 0; oe <= 1; oclk <= 0;
 					state <= _load_addr;
+					column <= 0; // reset counter
+					cycle <= 0; // reset counter
 					if (row >= rows - 1) begin
 						// Next cycle, completed the set of rows
 						row <= 0;
-						//if (cycle >= cycles - 1) begin
-							// Each complete of cycles is equivalent to a full
-							// vertical refresh of the display.
-							//
-							// Additionally each full cycle revolution is when frame
-							// buffer switching should occur. This avoids incorrect colour
-							// reprensentation as well as tearing. This window
-							// for flipping is a single cycle due to the
-							// pipelining of the addr counters -> bram ->
-							// encoder being synchronous.
-							cycle <= 0;
-							safe_flip <= 1;
-							if (dynamic_brightness == 1) begin
-								c_brightness <= brightness;
-							end
-						//end else begin
-							//cycle <= cycle + 1;
-							//safe_flip <= 0;
-						//end
+						// Each complete set of rows is equivalent to a full
+						// vertical refresh of the display.
+						//
+						// Additionally each full row revolution is when frame
+						// buffer switching should occur. This avoids incorrect colour
+						// reprensentation as well as tearing. This window
+						// for flipping is a single cycle due to the
+						// pipelining of the addr counters -> bram ->
+						// encoder being synchronous.
+						safe_flip <= 1;
 					end else begin
 						row <= row + 1;
 						safe_flip <= 0;

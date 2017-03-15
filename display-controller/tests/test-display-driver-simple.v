@@ -1,15 +1,17 @@
-module test_display_driver_simple;
+
+`include "tests/helpers.v"
+
+module test_display_driver_mod2_simple;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
 	wire [7:0] cycle;
 	wire safe_flip, oe, lat, oclk;
 
-
-	display_driver #(
+	display_driver_mod2 #(
 		.rows(8),
 		.columns(32),
-		.cycles(256)
+		.bitdepth(8)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
@@ -26,65 +28,61 @@ module test_display_driver_simple;
 	always
 		# 5 clk = !clk;
 
-	integer i, in, r, k;
+	integer i, in, r, k, kn;
 	initial begin
 		$dumpfile("test.vcd");
-		$dumpvars(0,test_display_driver_simple);
+		$dumpvars(0, test_display_driver_mod2_simple);
 
 		clk = 0;
 		rst = 1;
 		@(negedge clk)
 		rst = 0;
 
+		`define display_state(state) \
+			$display("[%t] {%10s} C:%4d/%4d(%4d) | %2dx%2d, OE(%d) LAT(%d) OCLK(%d) SF(%d) | B:%2d(%2d)", $time, state, cycle, k, kn, row, column, oe, lat, oclk, safe_flip, i, in)
+
 		// this does not assume any clock timings.
 
-		for (k = 0; k < 257; k = k + 1) begin
-			for (r = 0; r < 8; r = r + 1) begin
+		for (r = 0; r < 16; r = r + 1) begin
+			for (k = 0; k < 257; k = k + 1) begin
+				kn = (k + 1);
 				for (i = 0; i < 32; i = i + 1) begin
 					in = (i + 1);
 					@(posedge oclk);
-					$display("[%t] (cycle = %d//%d) R/C: %d x %d, OE(%b), LAT(%b), OCLK(%b), SF(%b)) [col ph %d]", $time, cycle, k, row, column, oe, lat, oclk, safe_flip, i);
-					helpers.assert_eq(column, in[4:0]); // pipeline should have next column in register
-					helpers.assert_eq(row, r);
-					helpers.assert_eq(lat, 1);
-					helpers.assert_eq(oe, 1);
-					helpers.assert_eq(safe_flip, 0);
+					`display_state("col ph");
+					`assert_eq(column, in[4:0]); // pipeline should have next column in register
+					`assert_eq(row, r);
+					`assert_eq(lat, 1);
+					`assert_eq(oe, (k == 0));
+					`assert_eq(safe_flip, 0);
 					@(negedge oclk);
-					$display("[%t] (cycle = %d//%d) R/C: %d x %d, OE(%b), LAT(%b), OCLK(%b), SF(%b)) [col pl %d]", $time, cycle, k, row, column, oe, lat, oclk, safe_flip, i);
-					helpers.assert_eq(row, r);
-					helpers.assert_eq(lat, 1);
-					helpers.assert_eq(oe, 1);
-					helpers.assert_eq(safe_flip, 0);
+					`display_state("col pl");
+					`assert_eq(row, r);
+					`assert_eq(lat, 1);
+					`assert_eq(oe, (k == 0));
+					`assert_eq(safe_flip, 0);
 				end
 
 				@(negedge lat); // latch
-				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [latch]", $time, cycle, row, column, oe, lat);
-				helpers.assert_eq(oe, 1);
-				helpers.assert_eq(oclk, 0);
-				helpers.assert_eq(safe_flip, 0);
+				`display_state("latch ph");
+				`assert_eq(oe, 1);
+				`assert_eq(oclk, 0);
+				`assert_eq(safe_flip, 0);
 				@(posedge lat); // release
-				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [latch]", $time, cycle, row, column, oe, lat);
-				helpers.assert_eq(oe, 1);
-				helpers.assert_eq(oclk, 0);
-				helpers.assert_eq(safe_flip, 0);
-
-				@(negedge oe) // oe low
-				$display("[%t] (cycle = %d) R/C: %d x %d, OE = %b, LAT = %b) [oe dewell]", $time, cycle, row, column, oe, lat);
-				helpers.assert_eq(lat, 1);
-				helpers.assert_eq(oclk, 0);
-				helpers.assert_eq(safe_flip, 0);
-				@(posedge oe); // oe release
-				$display("[%t] (cycle = %d) R/C: %d x %d, OE(%b), LAT(%b), OCLK(%b), SF(%b)) [oe dewell]", $time, cycle, row, column, oe, lat, oclk, safe_flip);
-				helpers.assert_eq(lat, 1);
-				helpers.assert_eq(oclk, 0);
+				`display_state("latch pl");
+				`assert_eq(cycle, kn[7:0]); // pipeline should have next cycle in register
+				//`assert_eq(column, 0); // pipeline should have next column in register
+				`assert_eq(oe, 1);
+				`assert_eq(oclk, 0);
+				`assert_eq(safe_flip, 0);
 			end
 
-			if (k == 255) begin
+			if (r == 7) begin
 				@(posedge safe_flip);
 				$display("safe flip asserted");
-				helpers.assert_eq(lat, 1);
-				helpers.assert_eq(oe, 1);
-				helpers.assert_eq(oclk, 0);
+				`assert_eq(lat, 1);
+				`assert_eq(oe, 1);
+				`assert_eq(oclk, 0);
 			end
 		end
 
