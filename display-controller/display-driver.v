@@ -7,8 +7,8 @@
 // buffers and PWM comparitors.
 //
 // A = multi-bit row address
-// LAT = active low, pulse to load/latch data
-// OE = active low, hold high during load, drop to low otherwise
+// LAT = pulse to load/latch data
+// OE = hold high during load, drop to low otherwise
 // CLK = rising edge
 //
 
@@ -32,8 +32,7 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 	wire clk, rst;
 
 	output safe_flip, oe, lat, oclk;
-	reg oe = 1, lat = 0;
-	reg oclk = 0;
+	reg oe = 0, lat = 0, oclk = 0;
 	reg safe_flip = 0;
 
 	// row counter
@@ -73,32 +72,32 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 	//     <> col == 0
 	// }
 	// col pl plath
-	// <> (/lat -> 1)
+	// <> (lat -> 0)
 	// <> (col valid)
 	// <> (cycle valid)
 	// col pl platl
-	// <> (/lat -> 0)
+	// <> (lat -> 1)
 	//
 	// {
 	//     {
 	//         col l ph
 	//         <> (outputs valid) (ram output valid)
 	//         <> (clk -> 1)
-	//         <> (/oe -> 0)
+	//         <> (oe -> 1)
 	//         col l pl
 	//         <> (PWM encoded) (next col address valid)
 	//         <> (clk -> 0)
-	//         <> (/oe -> 0)
+	//         <> (oe -> 1)
 	//         ... 32 times
 	//         <> col == 0
 	//     }
 	//     col l plath
-	//     <> (/oe -> 1)
-	//     <> (/lat -> 1)
+	//     <> (oe -> 0)
+	//     <> (lat -> 0)
 	//     <> (col valid)
 	//     <> (cycle valid)
 	//     col l platl
-	//     <> (/lat -> 0) (only latch with cycle != 0)
+	//     <> (lat -> 1) (only latch with cycle != 0)
 	//     ... repeat cycle times
 	// }
 	//
@@ -130,7 +129,7 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 
 	always @(posedge clk) begin
 		if (rst == 1) begin
-			lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+			lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 			column <= 0;
 			cycle <= 0;
 			row <= 0;
@@ -140,19 +139,19 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				_load_addr: begin
 					// during this state wait for the address signals to
 					// propagate to the output of the regsters.
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _load_value;
 				end
 				_load_value: begin
 					// during this state wait for the bram to fetch and buffer
 					// the addressed value on its output.
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _load_encode;
 				end
 				_load_encode: begin
 					// during this state wait for the ecoded value to hit the
 					// output, update the column count.
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _colpl_ph;
 					// update the column addr
 					if (column >= columns - 1) begin
@@ -166,11 +165,11 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				// Preload phase
 				//
 				_colpl_ph: begin
-					lat <= 0; oe <= 1; oclk <= 1; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 1; safe_flip <= 0;
 					state <= _colpl_pl;
 				end
 				_colpl_pl: begin
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					// Setup the column inc so that the outputs are valid in
 					// three states time
 					if (column == columns - 1) begin
@@ -187,7 +186,7 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 					end
 				end
 				_colpl_plath: begin
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					// increment the cycle so that it is valid in 2 states
 					// time
 					column <= 0;
@@ -200,12 +199,12 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				end
 				_colpl_platl: begin
 					// latch the just loaded values
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 1; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _colpl_platc;
 				end
 				_colpl_platc: begin
 					// clear cycle, transition between lat->oe
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _coll_ph;
 					column <= column + 1;
 				end
@@ -213,11 +212,11 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				// Pipelined load and OE display phase
 				//
 				_coll_ph: begin
-					lat <= 0; oe <= 0; oclk <= 1; safe_flip <= 0;
+					lat <= 0; oe <= 1; oclk <= 1; safe_flip <= 0;
 					state <= _coll_pl;
 				end
 				_coll_pl: begin
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
 					// Setup the column inc so that the outputs are valid in
 					// two states time
 					if (column == columns - 1) begin
@@ -232,7 +231,7 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 					end
 				end
 				_coll_plath: begin
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					// increment the cycle so that it is valid in 2 states
 					// time
 					column <= 0;
@@ -245,12 +244,12 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				end
 				_coll_platl: begin
 					// latch the just loaded values
-					lat <= 1; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 1; oe <= 0; oclk <= 0; safe_flip <= 0;
 					state <= _coll_platc;
 				end
 				_coll_platc: begin
 					// clear cycle, transition between lat->oe
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
+					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
 					if (cycle == 1) begin
 						state <= _row_complete;
 					end else begin
@@ -265,7 +264,7 @@ module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, ocl
 				_row_complete: begin
 					// this state increments addresses and allows for a cycle
 					// to flip the frame buffer safely.
-					lat <= 0; oe <= 1; oclk <= 0;
+					lat <= 0; oe <= 0; oclk <= 0;
 					state <= _load_addr;
 					column <= 0; // reset counter
 					cycle <= 0; // reset counter

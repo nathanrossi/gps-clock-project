@@ -52,27 +52,27 @@ module test_display_driver_mod2_simple;
 					`display_state("col ph");
 					`assert_eq(column, in[4:0]); // pipeline should have next column in register
 					`assert_eq(row, r);
-					`assert_eq(lat, 1);
-					`assert_eq(oe, (k == 0));
+					`assert_eq(lat, 0);
+					`assert_eq(oe, (k != 0));
 					`assert_eq(safe_flip, 0);
 					@(negedge oclk);
 					`display_state("col pl");
 					`assert_eq(row, r);
-					`assert_eq(lat, 1);
-					`assert_eq(oe, (k == 0));
+					`assert_eq(lat, 0);
+					`assert_eq(oe, (k != 0));
 					`assert_eq(safe_flip, 0);
 				end
 
-				@(negedge lat); // latch
+				@(posedge lat); // latch
 				`display_state("latch ph");
-				`assert_eq(oe, 1);
+				`assert_eq(oe, 0);
 				`assert_eq(oclk, 0);
 				`assert_eq(safe_flip, 0);
-				@(posedge lat); // release
+				@(negedge lat); // release
 				`display_state("latch pl");
 				`assert_eq(cycle, kn[7:0]); // pipeline should have next cycle in register
 				//`assert_eq(column, 0); // pipeline should have next column in register
-				`assert_eq(oe, 1);
+				`assert_eq(oe, 0);
 				`assert_eq(oclk, 0);
 				`assert_eq(safe_flip, 0);
 			end
@@ -80,8 +80,8 @@ module test_display_driver_mod2_simple;
 			if (r == 7) begin
 				@(posedge safe_flip);
 				$display("safe flip asserted");
-				`assert_eq(lat, 1);
-				`assert_eq(oe, 1);
+				`assert_eq(lat, 0);
+				`assert_eq(oe, 0);
 				`assert_eq(oclk, 0);
 			end
 		end

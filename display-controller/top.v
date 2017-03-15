@@ -90,6 +90,9 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	wire [4:0] column;
 	wire [7:0] cycle;
 
+	wire internal_oe;
+	assign oe = ~internal_oe;
+
 	display_driver_mod2 #(
 		.rows(8),
 		.columns(32),
@@ -101,7 +104,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.column(column),
 		.cycle(cycle),
 		.safe_flip(flip_safe),
-		.oe(oe),
+		.oe(internal_oe),
 		.lat(lat),
 		.oclk(oclk)
 	);
