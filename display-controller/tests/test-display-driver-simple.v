@@ -30,7 +30,7 @@ module test_display_driver_mod2_simple;
 
 	integer i, in, r, k, kn;
 	initial begin
-		$dumpfile("test.vcd");
+		$dumpfile({"obj/", `__FILE__, ".vcd"});
 		$dumpvars(0, test_display_driver_mod2_simple);
 
 		clk = 0;

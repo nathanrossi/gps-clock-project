@@ -26,7 +26,7 @@ module test_display_memory_simple;
 
 	integer i;
 	initial begin
-		$dumpfile("test.vcd");
+		$dumpfile({"obj/", `__FILE__, ".vcd"});
 		$dumpvars(0, test_display_memory_simple);
 
 		clk = 0;
