@@ -1,4 +1,6 @@
 
+`include "tests/helpers.v"
+
 module test_display_color_encoder_simple;
 	reg clk = 0;
 	reg [23:0] pixel;
@@ -32,7 +34,7 @@ module test_display_color_encoder_simple;
 				cycle = c;
 				@(negedge clk);
 				//$display("c = %d, i = %d, rgb %b color = 0x%h", c, i, rgb, pixel);
-				helpers.assert_eq(rgb, {2'b11, (i >= c) && (i != 0)});
+				`assert_eq(rgb, ({2'b11, (i >= c) && (i != 0)}));
 			end
 		end
 
@@ -42,7 +44,7 @@ module test_display_color_encoder_simple;
 				cycle = c;
 				@(negedge clk);
 				//$display("c = %d, i = %d, rgb %b color = 0x%h", c, i, rgb, pixel);
-				helpers.assert_eq(rgb, {1'b1, (i >= c) && (i != 0), 1'b1});
+				`assert_eq(rgb, ({1'b1, (i >= c) && (i != 0), 1'b1}));
 			end
 		end
 
@@ -52,7 +54,7 @@ module test_display_color_encoder_simple;
 				cycle = c;
 				@(negedge clk);
 				//$display("c = %d, i = %d, rgb %b color = 0x%h", c, i, rgb, pixel);
-				helpers.assert_eq(rgb, {(i >= c) && (i != 0), 2'b11});
+				`assert_eq(rgb, ({(i >= c) && (i != 0), 2'b11}));
 			end
 		end
 

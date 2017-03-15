@@ -1,4 +1,6 @@
 
+`include "tests/helpers.v"
+
 module test_spi_slave_simple;
 	reg clk = 0, sclk = 0, rst = 0, ss = 1;
 	reg mosi = 0;
@@ -47,18 +49,18 @@ module test_spi_slave_simple;
 			sclk = 0;
 		end
 		// on the clock after sclk is risen for the 8th bit a byte is valid
-		helpers.assert_eq(valid, 1);
-		helpers.assert_eq(data, 'hff);
-		helpers.assert_eq(sot, 1);
+		`assert_eq(valid, 1);
+		`assert_eq(data, 'hff);
+		`assert_eq(sot, 1);
 
 		@(negedge clk);
-		helpers.assert_eq(valid, 0);
+		`assert_eq(valid, 0);
 
 		ss = 1; // release
 		@(negedge clk);
-		helpers.assert_eq(valid, 0);
-		helpers.assert_eq(sot, 0);
-		helpers.assert_eq(eot, 1);
+		`assert_eq(valid, 0);
+		`assert_eq(sot, 0);
+		`assert_eq(eot, 1);
 
 		// multi-byte
 		ss = 0;
@@ -74,20 +76,20 @@ module test_spi_slave_simple;
 				sclk = 0;
 			end
 			// on the clock after sclk is risen for the 8th bit a byte is valid
-			helpers.assert_eq(valid, 1);
+			`assert_eq(valid, 1);
 			$display("got %h, expected %h", data, test_data[7:0]);
-			helpers.assert_eq(data, test_data[7:0]);
-			helpers.assert_eq(sot, (i == 0));
+			`assert_eq(data, test_data[7:0]);
+			`assert_eq(sot, (i == 0));
 		end
 
 		@(negedge clk);
-		helpers.assert_eq(valid, 0);
+		`assert_eq(valid, 0);
 
 		ss = 1; // release
 		@(negedge clk);
-		helpers.assert_eq(valid, 0);
-		helpers.assert_eq(sot, 0);
-		helpers.assert_eq(eot, 1);
+		`assert_eq(valid, 0);
+		`assert_eq(sot, 0);
+		`assert_eq(eot, 1);
 
 		$finish(0);
 	end

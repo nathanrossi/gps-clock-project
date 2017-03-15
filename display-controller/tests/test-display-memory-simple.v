@@ -1,4 +1,6 @@
 
+`include "tests/helpers.v"
+
 module test_display_memory_simple;
 	reg clk;
 	reg flip, wen = 0;
@@ -47,7 +49,7 @@ module test_display_memory_simple;
 			rcol = i;
 			wen = 1;
 			@(negedge clk);
-			//helpers.assert_eq(rdata, 'h111111);
+			//`assert_eq(rdata, 'h111111);
 		end
 
 		// flip buffers and write some data into the first line
@@ -58,7 +60,7 @@ module test_display_memory_simple;
 			rcol = i;
 			wen = 1;
 			@(negedge clk);
-			helpers.assert_eq(rdata, 'hffffff);
+			`assert_eq(rdata, 'hffffff);
 		end
 
 		// flip buffers and write some data into the first line
@@ -69,7 +71,7 @@ module test_display_memory_simple;
 			rcol = i;
 			wen = 0;
 			@(negedge clk);
-			helpers.assert_eq(rdata, 'h111111);
+			`assert_eq(rdata, 'h111111);
 		end
 
 		// flip buffers and write some data into the first line
@@ -80,7 +82,7 @@ module test_display_memory_simple;
 			rcol = i;
 			wen = 0;
 			@(negedge clk);
-			helpers.assert_eq(rdata, 'hffffff);
+			`assert_eq(rdata, 'hffffff);
 		end
 
 		$finish(0);
