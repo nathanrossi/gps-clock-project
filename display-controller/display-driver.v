@@ -22,7 +22,7 @@
 // be achieved.
 //
 
-module display_driver_mod2(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
+module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
 	parameter bitdepth = 8;

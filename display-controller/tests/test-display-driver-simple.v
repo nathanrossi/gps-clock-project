@@ -1,14 +1,14 @@
 
 `include "tests/helpers.v"
 
-module test_display_driver_mod2_simple;
+module test_display_driver_simple;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
 	wire [7:0] cycle;
 	wire safe_flip, oe, lat, oclk;
 
-	display_driver_mod2 #(
+	display_driver #(
 		.rows(8),
 		.columns(32),
 		.bitdepth(8)
@@ -31,7 +31,7 @@ module test_display_driver_mod2_simple;
 	integer i, in, r, k, kn;
 	initial begin
 		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_display_driver_mod2_simple);
+		$dumpvars(0, test_display_driver_simple);
 
 		clk = 0;
 		rst = 1;

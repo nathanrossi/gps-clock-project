@@ -93,7 +93,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	wire internal_oe;
 	assign oe = ~internal_oe;
 
-	display_driver_mod2 #(
+	display_driver #(
 		.rows(8),
 		.columns(32),
 		.bitdepth(8)
@@ -108,24 +108,6 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.lat(lat),
 		.oclk(oclk)
 	);
-
-	//display_driver #(
-		//.rows(8),
-		//.columns(32),
-		//.cycles(256),
-		//.row_post(32)
-	//) u_driver (
-		//.clk(clk_disp),
-		//.rst(rst),
-		//.brightness(brightness_flip),
-		//.row(row),
-		//.column(column),
-		//.cycle(cycle),
-		//.safe_flip(flip_safe),
-		//.oe(oe),
-		//.lat(lat),
-		//.oclk(oclk)
-	//);
 
 	assign a0 = row[0];
 	assign a1 = row[1];
