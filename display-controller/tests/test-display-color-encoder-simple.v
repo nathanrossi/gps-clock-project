@@ -3,17 +3,18 @@
 
 module test_display_color_encoder_simple;
 	reg clk = 0;
+	reg en = 0;
 	reg [47:0] pixel;
-	reg [7:0] cycle;
+	reg [47:0] cpixel;
 	wire [5:0] rgb;
 
 	display_color_encoder #(
 		.segments(2)
 	) u_encoder (
 		.clk(clk),
+		.en(en),
 		.pixel(pixel),
-		.cycle(cycle),
-		.rgb(rgb)
+		.cpixel(cpixel)
 	);
 
 	// 5/5ns clock (10ns period)
@@ -26,59 +27,36 @@ module test_display_color_encoder_simple;
 		$dumpvars(0, test_display_color_encoder_simple);
 
 		pixel = 'h000000000000;
-		cycle = 'h00;
 
 		// check that the bits propagate on the right cycles
 		// use extreme values only, as the color space conversion is too hard
 		// to check
 
+		en <= 1;
+
 		pixel = {24'h000000, 24'hffffff};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b000, 3'b111}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'h000000, 24'hffffff}));
 
 		pixel = {24'h000000, 24'hffff00};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b000, 3'b110}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'h000000, 24'hffff00}));
 
 		pixel = {24'h000000, 24'hff00ff};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b000, 3'b101}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'h000000, 24'hff00ff}));
 
 		pixel = {24'h000000, 24'h00ffff};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b000, 3'b011}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'h000000, 24'h00ffff}));
 
 		pixel = {24'h000000, 24'h000000};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b000, 3'b000}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'h000000, 24'h000000}));
 
 		pixel = {24'hffffff, 24'h000000};
-		for (c = 0; c < 256; c = c + 1) begin
-			cycle = c;
-			@(negedge clk);
-			@(negedge clk);
-			`assert_eq(rgb, ({3'b111, 3'b000}));
-		end
+		@(negedge clk); @(negedge clk);
+		`assert_eq(cpixel, ({24'hffffff, 24'h000000}));
 
 		$finish(0);
 	end

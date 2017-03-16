@@ -1,40 +1,35 @@
 
-module display_color_encoder(clk, pixel, cycle, rgb);
+module display_color_encoder(clk, en, pixel, cpixel);
 	parameter segments = 1;
 	parameter cyclewidth = 8;
 	parameter bitwidth = 8;
 	parameter gamma = 2.2;
 
-	input wire clk;
+	input wire clk, en;
 	input wire [cyclewidth - 1:0] cycle;
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
-	output reg [(3 * segments) - 1:0] rgb = 0;
+	output reg [((bitwidth * 3) * segments) - 1:0] cpixel = 0;
 
 	reg integer seg_counter = 0;
-	reg [cyclewidth - 1:0] corrected_pixel [0:2];
-
 	integer i;
-	initial begin
-		for (i = 0; i < 3; i = i + 1) begin
-			corrected_pixel[i] = 0 ;
-		end
-	end
 
 	always @(posedge clk) begin
-		// connect the channels from corrected to rgb bits
-		for (i = 0; i < 3; i = i + 1) begin
-			// put the corrected pixel into buffer (to use BRAM)
-			corrected_pixel[i] = gamma_lookup[i][pixel[(((bitwidth) * 3) * seg_counter) + (bitwidth * i) +:bitwidth]];
+		if (en == 1) begin
+			// connect the channels from corrected to rgb bits
+			for (i = 0; i < 3; i = i + 1) begin
+				// put the corrected pixel into buffer (to use BRAM)
+				cpixel[(((bitwidth) * 3) * seg_counter) + (bitwidth * i) +:bitwidth] <=
+					gamma_lookup[i][pixel[(((bitwidth) * 3) * seg_counter) + (bitwidth * i) +:bitwidth]];
+			end
 
-			// push the buffered corrected value to the seg_counter
-			rgb[3 * seg_counter + i] <= (corrected_pixel[i] >= cycle) && (corrected_pixel[i] != 0);
-		end
-
-		// increment counters
-		if (seg_counter + 1 == segments) begin
-			seg_counter <= 0;
+			// increment counters
+			if (seg_counter + 1 == segments) begin
+				seg_counter <= 0;
+			end else begin
+				seg_counter <= seg_counter + 1;
+			end
 		end else begin
-			seg_counter <= seg_counter + 1;
+			seg_counter <= 0;
 		end
 	end
 

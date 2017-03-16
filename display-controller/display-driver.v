@@ -2,50 +2,52 @@
 // Display Driver control machine
 // ------------------------------
 //
-// This module is to be used as a single instance controlling a single
-// display. Multple display segments can be achieved with multiple frame
-// buffers and PWM comparitors.
-//
-// A = multi-bit row address
-// LAT = pulse to load/latch data
-// OE = hold high during load, drop to low otherwise
-// CLK = rising edge
+// This module is intended to be used as a full control component that accepts
+// pixel data and outputs to a serial latched row/col driver display (e.g. LED
+// Pixel Displays).
 //
 
-// Clocking information:
-// ---------------------
-// This module has the following timing characteristics.
-// Each full refresh consumes ((((columns * 2) + 2 + (row_porch)) * rows) * cycles) cycles
-//
-// For a 8 row, 32 line display with 256 cycles (row_porch == 1). The frame
-// will take 71680 cycles. With a 12 MHz clock a refresh rate of ~167 Hz can
-// be achieved.
-//
-
-module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
+module display_driver(clk, rst, safe_flip, row, column, pixel, rgb, oe, lat, oclk);
+	parameter segments = 1;
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
 	parameter bitdepth = 8;
-	parameter _depthcount = (2 ** bitdepth);
 
 	input clk, rst;
 	wire clk, rst;
 
+	// Color Correction (gamma correction)
+	reg color_en = 0;
+	wire [((bitdepth * 3) * segments) - 1:0] cpixel;
+
+	display_color_encoder #(
+		.segments(segments),
+		.bitdepth(bitdepth),
+		.cyclewidth(bitdepth)
+	) u_color_encoder (
+		.clk(clk),
+		.en(color_en),
+		.pixel(pixel),
+		.cpixel(cpixel)
+	);
+
+	output wire [(3 * segments) - 1:0] rgb;
+
 	output safe_flip, oe, lat, oclk;
-	reg oe = 0, lat = 0, oclk = 0;
 	reg safe_flip = 0;
+	reg oe = 0, lat = 0, oclk = 0;
 
-	// row counter
-	output [$clog2(rows)-1:0] row;
-	reg [$clog2(rows)-1:0] row = 0;
-
-	// column counter
-	output [$clog2(columns)-1:0] column;
-	reg [$clog2(columns)-1:0] column = 0;
+	// row, column counter
+	output reg [$clog2(rows) - 1:0] row = 0;
+	output reg [$clog2(columns) - 1:0] column = 0;
 
 	// cycle counter
-	output [bitdepth-1:0] cycle;
 	reg [bitdepth-1:0] cycle = 0;
+
+	// TODO: split the state machine up into 3 divided jobs
+	// fsm1 -> load columns and latch
+	// fsm2 -> load row, handle oe enable for cycles
+	// fsm3 -> load rows, handle frame complete
 
 	// Expected function use.
 	//
@@ -106,9 +108,6 @@ module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 	// <> row ++ (or wrap to next frame)
 	// <> flip safe here
 	//
-	// MOD2 - > cycle on the row, avoid row switching for pwm'ing of bits
-	//
-	integer latch_delay = 0;
 
 	integer state = 0;
 	parameter
@@ -190,7 +189,7 @@ module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 					// increment the cycle so that it is valid in 2 states
 					// time
 					column <= 0;
-					if (cycle == _depthcount - 1) begin
+					if (cycle == (2 ** bitdepth) - 1) begin
 						cycle <= 0;
 					end else begin
 						cycle <= cycle + 1;
@@ -235,7 +234,7 @@ module display_driver(clk, rst, row, column, cycle, safe_flip, oe, lat, oclk);
 					// increment the cycle so that it is valid in 2 states
 					// time
 					column <= 0;
-					if (cycle >= _depthcount - 1) begin
+					if (cycle >= (2 ** bitdepth) - 1) begin
 						cycle <= 0;
 					end else begin
 						cycle <= cycle + 1;

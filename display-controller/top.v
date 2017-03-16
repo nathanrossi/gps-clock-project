@@ -1,7 +1,7 @@
 
 module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
-	input clk;
-	wire clk;
+	input wire clk;
+	reg rst = 0;
 
 	// divide 2
 	reg [63:0] divider = 'h0000000000000000;
@@ -83,17 +83,28 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	output r1, g1, b1;
 	output a0, a1, a2;
 	output oe, lat, oclk;
+
+	assign a0 = row[0];
+	assign a1 = row[1];
+	assign a2 = row[2];
+
 	wire oe, lat, oclk;
-
-	reg rst = 0;
-	wire [2:0] row;
-	wire [4:0] column;
-	wire [7:0] cycle;
-
 	wire internal_oe;
 	assign oe = ~internal_oe;
 
+	assign r0 = rgb[0];
+	assign g0 = rgb[1];
+	assign b0 = rgb[2];
+	assign r1 = rgb[0];
+	assign g1 = rgb[1];
+	assign b1 = rgb[2];
+
+	wire [2:0] row;
+	wire [4:0] column;
+	wire [2:0] rgb;
+
 	display_driver #(
+		.segments(1),
 		.rows(8),
 		.columns(32),
 		.bitdepth(8)
@@ -102,16 +113,12 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.rst(rst),
 		.row(row),
 		.column(column),
-		.cycle(cycle),
 		.safe_flip(flip_safe),
+		.rgb(rgb),
 		.oe(internal_oe),
 		.lat(lat),
 		.oclk(oclk)
 	);
-
-	assign a0 = row[0];
-	assign a1 = row[1];
-	assign a2 = row[2];
 
 	reg mem_flip = 0, mem_wen = 0;
 	wire [23:0] mem_o;
@@ -131,24 +138,6 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.wdata(load_pixel),
 		.rdata(mem_o)
 	);
-
-	wire [2:0] rgb;
-
-	display_color_encoder #(
-		.cyclewidth(8)
-	) u_color_encoder (
-		.clk(clk_disp),
-		.pixel(mem_o),
-		.cycle(cycle),
-		.rgb(rgb)
-	);
-
-	assign r0 = rgb[0];
-	assign g0 = rgb[1];
-	assign b0 = rgb[2];
-	assign r1 = rgb[0];
-	assign g1 = rgb[1];
-	assign b1 = rgb[2];
 
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output reg spi_miso = 0;
