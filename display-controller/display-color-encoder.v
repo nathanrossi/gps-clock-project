@@ -6,7 +6,6 @@ module display_color_encoder(clk, pixel, cpixel);
 	parameter gamma = 2.2;
 
 	input wire clk;
-	input wire [cyclewidth - 1:0] cycle;
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
 	output reg [((bitwidth * 3) * segments) - 1:0] cpixel = 0;
 

@@ -8,8 +8,6 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	always @(posedge clk) begin
 		divider = divider + 1;
 	end
-	//wire clk_disp = divider[7];
-	//wire clk_disp = divider[3];
 	wire clk_disp = clk;
 
 	output led0, led1, led2, led3, led4;
@@ -22,15 +20,15 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	// buffer load logic
 	//reg started = 0, flip_buffer = 0;
 	//wire [7:0] load_data;
-	//reg [23:0] load_pixel = 0;
-	//reg [2:0] load_row = 7;
-	//reg [4:0] load_col = 31; // defaulted to the end so that it wraps on start
+	reg [23:0] load_pixel = 0;
+	reg [2:0] load_row = 7;
+	reg [4:0] load_col = 31; // defaulted to the end so that it wraps on start
 	//wire load_valid, load_sot, load_eot;
-	//wire flip_safe;
+	wire frame_complete;
 	//integer load_pixel_count = 0;
 	//always @(posedge clk_disp) begin
 		//if (flip_buffer == 1) begin
-			//if (flip_safe == 1) begin
+			//if (frame_complete == 1) begin
 				//mem_flip <= !mem_flip;
 				//flip_buffer <= 0;
 			//end
@@ -79,6 +77,9 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		//end
 	//end
 
+	reg mem_flip = 0, mem_wen = 0;
+	wire [23:0] mem_o;
+
 	output r0, g0, b0;
 	output r1, g1, b1;
 	output a0, a1, a2;
@@ -107,21 +108,19 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.segments(1),
 		.rows(8),
 		.columns(32),
-		.bitdepth(8)
+		.bitwidth(8)
 	) u_driver (
 		.clk(clk_disp),
 		.rst(rst),
 		.row(row),
 		.column(column),
-		.safe_flip(flip_safe),
+		.frame_complete(frame_complete),
+		.pixel(mem_o),
 		.rgb(rgb),
 		.oe(internal_oe),
 		.lat(lat),
 		.oclk(oclk)
 	);
-
-	reg mem_flip = 0, mem_wen = 0;
-	wire [23:0] mem_o;
 
 	display_memory #(
 		.rows(8),
