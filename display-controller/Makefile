@@ -31,7 +31,7 @@ clean:
 
 display-memory.v: obj/initial-image-memory.hex
 obj/initial-image-memory.hex: scripts/image-table.py
-	@echo "[MEM] generating image table"
+	@echo "[MEM  ] generating image table"
 	$(Q)-mkdir -p $(dir $@)
 	$(Q)./scripts/image-table.py > $@
 
@@ -53,7 +53,7 @@ obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-en
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(Q)-mkdir -p $(dir $@)
 	@echo "[SIMUL] $(patsubst obj/tests/%.vvp,%,$@)"
-	$(Q)$(IVERILOG) -g2012 -o $@ $(filter-out tests/helpers.v,$^) $(QSH)
+	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^) $(QSH)
 
 obj/tests/%_run: obj/tests/%.vvp
 	@echo "[TEST ] $(patsubst obj/tests/%_run,%,$@)...";
@@ -74,12 +74,12 @@ obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-slav
 obj/%.blif: %.v
 	$(Q)-mkdir -p $(dir $@)
 	@echo "[SYNTH] $@"
-	$(Q)$(YOSYS) -p "synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(filter %.v,$^) $(QSH)
+	$(Q)$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(QSH)
 
 obj/%.asc: obj/%.blif %.pcf
 	$(Q)-mkdir -p $(dir $@)
 	@echo "[P-N-R] $@"
-	$(Q)$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^)) $(QSH)
+	$(Q)$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^))
 
 obj/%.bin: obj/%.asc
 	$(Q)-mkdir -p $(dir $@)
