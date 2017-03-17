@@ -83,13 +83,12 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	output r0, g0, b0;
 	output r1, g1, b1;
 	output a0, a1, a2;
-	output oe, lat, oclk;
 
 	assign a0 = row[0];
 	assign a1 = row[1];
 	assign a2 = row[2];
 
-	wire oe, lat, oclk;
+	output wire oe, lat, oclk;
 	wire internal_oe;
 	assign oe = ~internal_oe;
 

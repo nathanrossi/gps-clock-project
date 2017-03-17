@@ -6,10 +6,11 @@ QSH = $(if $(V),,> /dev/null 2>&1)
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
 ARACHNEPNR = $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
+ICEBOX = $(BASEPROGS)/icestorm/icebox
 ICEPACK = $(BASEPROGS)/icestorm/icepack/icepack
+ICETIME = $(BASEPROGS)/icestorm/icetime/icetime
 IVERILOG = iverilog
 VVP = vvp
-
 
 all: bitstream tests
 
@@ -80,6 +81,7 @@ obj/%.asc: obj/%.blif %.pcf
 	$(Q)-mkdir -p $(dir $@)
 	@echo "[P-N-R] $@"
 	$(Q)$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^))
+	$(Q)$(ICETIME) -C $(ICEBOX)/chipdb-1k.txt -d hx1k -P tq144 -p $(firstword $(filter %.pcf,$^)) -c 12 $@
 
 obj/%.bin: obj/%.asc
 	$(Q)-mkdir -p $(dir $@)

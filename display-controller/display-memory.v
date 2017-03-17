@@ -14,7 +14,6 @@ module display_memory(clk, flip, wen, wrow, wcol, rrow, rcol, wdata, rdata);
 	reg [width-1:0] memory[0:_addrwidth - 1];
 	integer ik;
 	initial begin
-		$display("_addrwidth = %d", _addrwidth);
 		$readmemh("obj/initial-image-memory.hex", memory);
 		//for (ik = 0; ik < _addrwidth - 1; ik = ik + 1) begin
 			//memory[ik] = 'h000f00; // set to high for now, so we get all leds
