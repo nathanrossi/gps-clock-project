@@ -38,14 +38,15 @@ module display_color_encoder(clk, pixel, cpixel);
 	// same gamma correction.
 	//
 	reg [cyclewidth - 1:0] gamma_lookup [0:(3 * segments) - 1][0:(2 ** bitwidth) - 1];
-	real v;
+	reg [cyclewidth - 1:0] gamma_lookup_data [0:(2 ** bitwidth) - 1];
 	initial begin
+		$readmemh("obj/gamma-lookup-table.hex", gamma_lookup_data);
 		for (i = 0; i < (2 ** bitwidth); i = i + 1) begin
-			v = (($itor(i) / ((2 ** bitwidth) - 1)) ** gamma) * ((2 ** cyclewidth) - 1);
 			for (j = 0; j < segments * 3; j = j + 1) begin
-				gamma_lookup[j][i] = v;
+				gamma_lookup[j][i] = gamma_lookup_data[i];
 			end
-			$display("[GAMMA LUT] in %b => %f %b [%d]", i, v, gamma_lookup[0][i], gamma_lookup[0][i]);
+			// Display the values, for manual checking
+			$display("[GAMMA LUT] in %b => %b [%d]", i, gamma_lookup[0][i], gamma_lookup[0][i]);
 		end
 	end
 

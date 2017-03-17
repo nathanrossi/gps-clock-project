@@ -68,23 +68,27 @@ def srgb_decode(r, g, b):
 	return (v[0][0], v[1][0], v[2][0])
 
 if __name__ == "__main__":
+	gamma = 2.2
 	inbits = 8
-	outbits = 10
+	outbits = 8
 
 	insize = (2 ** inbits) - 1
 	outsize = (2 ** outbits) - 1
 
-	print("simple total memory needed = %d B" % ((insize) * outbits / 8))
-	print("sRGB total memory needed = %d B" % ((insize ** 3) * outbits / 8))
+	for a in range(insize + 1):
+		v = min(outsize, int(outsize * (float(a) / insize) ** (gamma)))
+		print(("%%0%dx" % (outbits / 4)) % v)
+
+	# print("simple total memory needed = %d B" % ((insize) * outbits / 8))
+	# print("sRGB total memory needed = %d B" % ((insize ** 3) * outbits / 8))
 
 	# TODO: look at 3D LUT with interpolation? might be too much logic for the HX1K.
-
-	for r in range(insize + 1):
-		for g in range(insize + 1):
-			for b in range(insize + 1):
-				rgb = srgb_decode((float(r) / insize), (float(g) / insize), (float(b) / insize))
-				lrgb = (outsize * rgb[0], outsize * rgb[1], outsize * rgb[2])
-				testv2 = outsize * (float(r) / insize) ** (2.2)
-				print("%s: %s %d " % (repr((r, g, b)), repr(lrgb), testv2))
+	# for r in range(insize + 1):
+		# for g in range(insize + 1):
+			# for b in range(insize + 1):
+				# rgb = srgb_decode((float(r) / insize), (float(g) / insize), (float(b) / insize))
+				# lrgb = (outsize * rgb[0], outsize * rgb[1], outsize * rgb[2])
+				# testv2 = outsize * (float(r) / insize) ** (2.2)
+				# print("%s: %s %d " % (repr((r, g, b)), repr(lrgb), testv2))
 
 

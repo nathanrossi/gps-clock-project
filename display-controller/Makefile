@@ -1,12 +1,7 @@
 
 # output
-ifeq ($(V),1)
-Q =
-QSH =
-else
-Q = @
-QSH = > /dev/null 2>&1
-endif
+Q = $(if $(filter $(V),2),,@)
+QSH = $(if $(V),,> /dev/null 2>&1)
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
@@ -35,11 +30,16 @@ clean:
 .PHONY: all clean tests bitstream $(TESTS)
 
 display-memory.v: obj/initial-image-memory.hex
-obj/initial-image-memory.hex: image-table.py
-	@echo "[IMGTB] generating image table"
+obj/initial-image-memory.hex: scripts/image-table.py
+	@echo "[MEM] generating image table"
 	$(Q)-mkdir -p $(dir $@)
-	$(Q)./image-table.py > obj/initial-image-memory.hex
+	$(Q)./scripts/image-table.py > $@
 
+display-color-encoder.v: obj/gamma-lookup-table.hex
+obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
+	@echo "[MEM  ] generating gamma correction table"
+	$(Q)-mkdir -p $(dir $@)
+	$(Q)./scripts/gamma-correction-tables.py > $@
 #
 # Tests
 #
