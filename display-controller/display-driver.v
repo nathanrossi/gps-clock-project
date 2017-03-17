@@ -17,7 +17,6 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 	wire clk, rst;
 
 	// Color Correction (gamma correction)
-	reg color_en = 0;
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
 	wire [((bitwidth * 3) * segments) - 1:0] cpixel;
 
@@ -27,7 +26,6 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 		.cyclewidth(bitwidth)
 	) u_color_encoder (
 		.clk(clk),
-		.en(color_en),
 		.pixel(pixel),
 		.cpixel(cpixel)
 	);

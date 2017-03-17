@@ -1,35 +1,24 @@
 
-module display_color_encoder(clk, en, pixel, cpixel);
+module display_color_encoder(clk, pixel, cpixel);
 	parameter segments = 1;
 	parameter cyclewidth = 8;
 	parameter bitwidth = 8;
 	parameter gamma = 2.2;
 
-	input wire clk, en;
+	input wire clk;
 	input wire [cyclewidth - 1:0] cycle;
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
 	output reg [((bitwidth * 3) * segments) - 1:0] cpixel = 0;
 
-	reg integer seg_counter = 0;
-	integer i;
-
+	integer i, j;
 	always @(posedge clk) begin
-		if (en == 1) begin
-			// connect the channels from corrected to rgb bits
+		// connect the channels from corrected to rgb bits
+		for (j = 0; j < segments; j = j + 1) begin
 			for (i = 0; i < 3; i = i + 1) begin
 				// put the corrected pixel into buffer (to use BRAM)
-				cpixel[(((bitwidth) * 3) * seg_counter) + (bitwidth * i) +:bitwidth] <=
-					gamma_lookup[i][pixel[(((bitwidth) * 3) * seg_counter) + (bitwidth * i) +:bitwidth]];
+				cpixel[(((bitwidth) * 3) * j) + (bitwidth * i) +:bitwidth] <=
+					gamma_lookup[(3 * j) + i][pixel[(((bitwidth) * 3) * j) + (bitwidth * i) +:bitwidth]];
 			end
-
-			// increment counters
-			if (seg_counter + 1 == segments) begin
-				seg_counter <= 0;
-			end else begin
-				seg_counter <= seg_counter + 1;
-			end
-		end else begin
-			seg_counter <= 0;
 		end
 	end
 
@@ -49,14 +38,14 @@ module display_color_encoder(clk, en, pixel, cpixel);
 	// For now the pre-loading LUT info is based on all channels having the
 	// same gamma correction.
 	//
-	reg [cyclewidth - 1:0] gamma_lookup [0:2][0:(2 ** bitwidth) - 1];
+	reg [cyclewidth - 1:0] gamma_lookup [0:(3 * segments) - 1][0:(2 ** bitwidth) - 1];
 	real v;
 	initial begin
 		for (i = 0; i < (2 ** bitwidth); i = i + 1) begin
 			v = (($itor(i) / ((2 ** bitwidth) - 1)) ** gamma) * ((2 ** cyclewidth) - 1);
-			gamma_lookup[0][i] = v;
-			gamma_lookup[1][i] = v;
-			gamma_lookup[2][i] = v;
+			for (j = 0; j < segments * 3; j = j + 1) begin
+				gamma_lookup[j][i] = v;
+			end
 			$display("[GAMMA LUT] in %b => %f %b [%d]", i, v, gamma_lookup[0][i], gamma_lookup[0][i]);
 		end
 	end

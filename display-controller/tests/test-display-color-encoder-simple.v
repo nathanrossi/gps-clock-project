@@ -3,7 +3,6 @@
 
 module test_display_color_encoder_simple;
 	reg clk = 0;
-	reg en = 0;
 	reg [47:0] pixel;
 	reg [47:0] cpixel;
 	wire [5:0] rgb;
@@ -12,7 +11,6 @@ module test_display_color_encoder_simple;
 		.segments(2)
 	) u_encoder (
 		.clk(clk),
-		.en(en),
 		.pixel(pixel),
 		.cpixel(cpixel)
 	);
@@ -32,30 +30,28 @@ module test_display_color_encoder_simple;
 		// use extreme values only, as the color space conversion is too hard
 		// to check
 
-		en <= 1;
-
 		pixel = {24'h000000, 24'hffffff};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'h000000, 24'hffffff}));
 
 		pixel = {24'h000000, 24'hffff00};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'h000000, 24'hffff00}));
 
 		pixel = {24'h000000, 24'hff00ff};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'h000000, 24'hff00ff}));
 
 		pixel = {24'h000000, 24'h00ffff};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'h000000, 24'h00ffff}));
 
 		pixel = {24'h000000, 24'h000000};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'h000000, 24'h000000}));
 
 		pixel = {24'hffffff, 24'h000000};
-		@(negedge clk); @(negedge clk);
+		@(negedge clk);
 		`assert_eq(cpixel, ({24'hffffff, 24'h000000}));
 
 		$finish(0);
