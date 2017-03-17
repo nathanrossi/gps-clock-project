@@ -7,23 +7,24 @@
 // Pixel Displays).
 //
 
-module display_driver(clk, rst, safe_flip, row, column, pixel, rgb, oe, lat, oclk);
+module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat, oclk);
 	parameter segments = 1;
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
-	parameter bitdepth = 8;
+	parameter bitwidth = 8;
 
 	input clk, rst;
 	wire clk, rst;
 
 	// Color Correction (gamma correction)
 	reg color_en = 0;
-	wire [((bitdepth * 3) * segments) - 1:0] cpixel;
+	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
+	wire [((bitwidth * 3) * segments) - 1:0] cpixel;
 
 	display_color_encoder #(
 		.segments(segments),
-		.bitdepth(bitdepth),
-		.cyclewidth(bitdepth)
+		.bitwidth(bitwidth),
+		.cyclewidth(bitwidth)
 	) u_color_encoder (
 		.clk(clk),
 		.en(color_en),
@@ -31,263 +32,287 @@ module display_driver(clk, rst, safe_flip, row, column, pixel, rgb, oe, lat, ocl
 		.cpixel(cpixel)
 	);
 
-	output wire [(3 * segments) - 1:0] rgb;
-
-	output safe_flip, oe, lat, oclk;
-	reg safe_flip = 0;
-	reg oe = 0, lat = 0, oclk = 0;
+	output reg [(3 * segments) - 1:0] rgb = 0;
+	output reg oe = 0, lat = 0, oclk = 0;
 
 	// row, column counter
 	output reg [$clog2(rows) - 1:0] row = 0;
-	output reg [$clog2(columns) - 1:0] column = 0;
+	integer column_counter = 0;
+	output wire [$clog2(columns) - 1:0] column;
+	assign column = column_counter[0 +:$clog2(columns)];
 
-	// cycle counter
-	reg [bitdepth-1:0] cycle = 0;
+	// cycle counter (must have one more bit to store a post stage)
+	reg [bitwidth:0] cycle = 0;
 
-	// TODO: split the state machine up into 3 divided jobs
+	// RGB pixel values to bits
+	integer i = 0, c = 0;
+	always @(posedge clk) begin
+		if (rst == 1) begin
+			rgb <= {(3 * segments){1'b0}};
+		end else begin
+			for (i = 0; i < segments; i = i + 1) begin
+				for (c = 0; c < 3; c = c + 1) begin
+					rgb[(3 * i) + c] <=
+						(cpixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] >= cycle[0 +:bitwidth]) &&
+						(cpixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] != 0);
+				end
+			end
+		end
+	end
+
 	// fsm1 -> load columns and latch
-	// fsm2 -> load row, handle oe enable for cycles
-	// fsm3 -> load rows, handle frame complete
-
-	// Expected function use.
 	//
-	// -> col -> bram -> pwm -> out
-	//     1      1       1
-	// Takes 3 cycles/states for a addr change to reach the output
-	// Takes 2 cycles/states for a cycle change to reach the output
+	// Sync chain
+	// [addr set]
+	//           [bram load]
+	//                      [pixel correct]
+	//                                     [rgb buffered]
 	//
-	// load_addr
-	// <> (row and col addresses valid)
-	// load_value
-	// <> (ram output valid)
-	// load_encode
-	// <> (PWM encoded) (next col address valid)
+	// This can be pipelined such that during each set the rgb output is
+	// changed.
 	//
-	// {
-	//     col pl ph
-	//     <> (outputs valid) (ram output valid)
-	//     <> (clk -> 1)
-	//     col pl pl
-	//     <> (PWM encoded) (next col address valid)
-	//     <> (clk -> 0)
-	//     ... 32 times
-	//     <> col == 0
-	// }
-	// col pl plath
-	// <> (lat -> 0)
-	// <> (col valid)
-	// <> (cycle valid)
-	// col pl platl
-	// <> (lat -> 1)
+	// A = addr is valid
+	// P = bram frame buffer has output valid
+	// C = corrected pixel is valid
+	// R = rgb bit outputs are valid
+	// -_ = indicates the oclk high->low pulse
 	//
-	// {
-	//     {
-	//         col l ph
-	//         <> (outputs valid) (ram output valid)
-	//         <> (clk -> 1)
-	//         <> (oe -> 1)
-	//         col l pl
-	//         <> (PWM encoded) (next col address valid)
-	//         <> (clk -> 0)
-	//         <> (oe -> 1)
-	//         ... 32 times
-	//         <> col == 0
-	//     }
-	//     col l plath
-	//     <> (oe -> 0)
-	//     <> (lat -> 0)
-	//     <> (col valid)
-	//     <> (cycle valid)
-	//     col l platl
-	//     <> (lat -> 1) (only latch with cycle != 0)
-	//     ... repeat cycle times
-	// }
+	// APCR-_
+	//   APCR-_
+	//     APCR-_
+	//      .....
+	//         APCR-_
+	//           APCR-_
+	// APCR-_-_-_....-_-_ |
+	//    R R R R     R
+	// 0 1 2 3 4
 	//
-	// row complete
-	// <> cycle = 0
-	// <> row ++ (or wrap to next frame)
-	// <> flip safe here
+	// * address for next pixel is updated by the B state so that it is valid
+	//   on the P state.
+	// * in order to achieve oclk at /2 clk, the R state triggers a valid
+	//   state which allows for the states to trigger inversions of the oclk.
 	//
-
-	integer state = 0;
+	integer fsm1_state = 0;
+	reg load_complete = 0;
 	parameter
-		_load_addr = 0,
-		_load_value = 1,
-		_load_encode = 2,
-		_colpl_ph = 3, // preload
-		_colpl_pl = 4,
-		_colpl_plath = 5, // preload latch
-		_colpl_platl = 6,
-		_colpl_platc = 7,
-		_coll_ph = 8, // load (aka load next, display current)
-		_coll_pl = 9,
-		_coll_plath = 10, // preload latch
-		_coll_platl = 11,
-		_coll_platc = 12,
-		_row_complete = 13;
+		_fsm1_hold = 0,
+		_fsm1_wait = 1,
+		_fsm1_addr = 2,
+		_fsm1_pixel = 3,
+		_fsm1_correct = 4,
+		_fsm1_rgbbits = 5,
+		_fsm1_push = 6,
+		_fsm1_push_hold = 7;
 
 	always @(posedge clk) begin
 		if (rst == 1) begin
-			lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-			column <= 0;
-			cycle <= 0;
-			row <= 0;
-			state <= _load_addr;
+			oclk <= 0;
+			column_counter <= 0;
+			load_complete <= 0;
+			fsm1_state <= _fsm1_wait;
 		end else begin
-			case (state)
-				_load_addr: begin
-					// during this state wait for the address signals to
-					// propagate to the output of the regsters.
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _load_value;
-				end
-				_load_value: begin
-					// during this state wait for the bram to fetch and buffer
-					// the addressed value on its output.
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _load_encode;
-				end
-				_load_encode: begin
-					// during this state wait for the ecoded value to hit the
-					// output, update the column count.
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _colpl_ph;
-					// update the column addr
-					if (column >= columns - 1) begin
-						column <= 0;
-					end else begin
-						column <= column + 1;
+			case (fsm1_state)
+				_fsm1_hold: begin
+					if (push_row == 0) begin
+						fsm1_state <= _fsm1_wait;
 					end
+					load_complete <= 1;
 				end
-
-				//
-				// Preload phase
-				//
-				_colpl_ph: begin
-					lat <= 0; oe <= 0; oclk <= 1; safe_flip <= 0;
-					state <= _colpl_pl;
-				end
-				_colpl_pl: begin
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					// Setup the column inc so that the outputs are valid in
-					// three states time
-					if (column == columns - 1) begin
-						column <= 0;
-					end else begin
-						column <= column + 1;
+				_fsm1_wait: begin
+					if (push_row == 1) begin
+						fsm1_state <= _fsm1_addr;
 					end
-					// move out of load after the last bit. This is not when
-					// column wraps, but the first cycle after it wraps
-					if (column == 0) begin
-						state <= _colpl_plath;
+					column_counter <= 0;
+					load_complete <= 0;
+				end
+				_fsm1_addr: fsm1_state <= _fsm1_pixel;
+				_fsm1_pixel: begin
+					fsm1_state <= _fsm1_correct;
+					column_counter <= column_counter + 1;
+				end
+				_fsm1_correct: fsm1_state <= _fsm1_rgbbits;
+				_fsm1_rgbbits: begin
+					fsm1_state <= _fsm1_push;
+					column_counter <= column_counter + 1;
+				end
+				_fsm1_push: begin
+					fsm1_state <= _fsm1_push_hold;
+					oclk <= 1;
+				end
+				_fsm1_push_hold: begin
+					if (column_counter >= columns + 1) begin
+						column_counter <= 0;
+						fsm1_state <= _fsm1_hold;
 					end else begin
-						state <= _colpl_ph;
+						fsm1_state <= _fsm1_push;
+						column_counter <= column_counter + 1;
 					end
+					oclk <= 0;
 				end
-				_colpl_plath: begin
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					// increment the cycle so that it is valid in 2 states
-					// time
-					column <= 0;
-					if (cycle == (2 ** bitdepth) - 1) begin
-						cycle <= 0;
-					end else begin
-						cycle <= cycle + 1;
-					end
-					state <= _colpl_platl;
-				end
-				_colpl_platl: begin
-					// latch the just loaded values
-					lat <= 1; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _colpl_platc;
-				end
-				_colpl_platc: begin
-					// clear cycle, transition between lat->oe
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _coll_ph;
-					column <= column + 1;
-				end
-				//
-				// Pipelined load and OE display phase
-				//
-				_coll_ph: begin
-					lat <= 0; oe <= 1; oclk <= 1; safe_flip <= 0;
-					state <= _coll_pl;
-				end
-				_coll_pl: begin
-					lat <= 0; oe <= 1; oclk <= 0; safe_flip <= 0;
-					// Setup the column inc so that the outputs are valid in
-					// two states time
-					if (column == columns - 1) begin
-						column <= 0;
-					end else begin
-						column <= column + 1;
-					end
-					if (column == 0) begin
-						state <= _coll_plath;
-					end else begin
-						state <= _coll_ph;
-					end
-				end
-				_coll_plath: begin
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					// increment the cycle so that it is valid in 2 states
-					// time
-					column <= 0;
-					if (cycle >= (2 ** bitdepth) - 1) begin
-						cycle <= 0;
-					end else begin
-						cycle <= cycle + 1;
-					end
-					state <= _coll_platl;
-				end
-				_coll_platl: begin
-					// latch the just loaded values
-					lat <= 1; oe <= 0; oclk <= 0; safe_flip <= 0;
-					state <= _coll_platc;
-				end
-				_coll_platc: begin
-					// clear cycle, transition between lat->oe
-					lat <= 0; oe <= 0; oclk <= 0; safe_flip <= 0;
-					if (cycle == 1) begin
-						state <= _row_complete;
-					end else begin
-						state <= _coll_ph;
-						column <= column + 1;
-					end
-				end
-
-				//
-				// Handle completion of horiz refresh, and vert refresh
-				//
-				_row_complete: begin
-					// this state increments addresses and allows for a cycle
-					// to flip the frame buffer safely.
-					lat <= 0; oe <= 0; oclk <= 0;
-					state <= _load_addr;
-					column <= 0; // reset counter
-					cycle <= 0; // reset counter
-					if (row >= rows - 1) begin
-						// Next cycle, completed the set of rows
-						row <= 0;
-						// Each complete set of rows is equivalent to a full
-						// vertical refresh of the display.
-						//
-						// Additionally each full row revolution is when frame
-						// buffer switching should occur. This avoids incorrect colour
-						// reprensentation as well as tearing. This window
-						// for flipping is a single cycle due to the
-						// pipelining of the addr counters -> bram ->
-						// encoder being synchronous.
-						safe_flip <= 1;
-					end else begin
-						row <= row + 1;
-						safe_flip <= 0;
-					end
-				end
-				default: state <= _load_addr;
+				default: fsm1_state <= _fsm1_wait;
 			endcase
 		end
 	end
+
+	// fsm2 -> load row, handle oe enable for cycles
+	//
+	// This fsm drives the cycle and oe whilst triggering the fsm1 to drive
+	// the row loading and latching
+	//
+	// The process begins by first loading the first cycle state of data into
+	// the row bits, then the cycle is incremented and the second state
+	// enables the display (OE high) for the previous cycle.
+	//
+	// This fsm must control the latch due to also controlling oe, oe must be
+	// off while latching.
+	//
+	// C = cycle valid
+	// R = row loaded
+	// Ll = latch pulse
+	// O = oe enabled (during states)
+	//
+	//  C...R
+	//       Ll
+	//        C...R (O)
+	//             Ll
+	//              C...R (O)
+	//                   Ll
+	// ...
+	//                    C...R (0)
+	//                         Ll
+	//                          C...R (O) <- dummy load of cycle 0
+	//
+	integer fsm2_state = 0;
+	reg cycle_complete = 0;
+	reg push_row = 0;
+	parameter
+		_fsm2_hold = 0,
+		_fsm2_wait = 1,
+		_fsm2_load = 2,
+		_fsm2_load_wait = 3,
+		_fsm2_latch = 4,
+		_fsm2_latch_hold = 5;
+
+	always @(posedge clk) begin
+		if (rst == 1) begin
+			oclk <= 0;
+			lat <= 0;
+			cycle <= 0;
+			cycle_complete <= 0;
+			push_row <= 0;
+			fsm2_state <= _fsm1_wait;
+		end else begin
+			case (fsm2_state)
+				_fsm2_hold: begin
+					if (push_cycle == 0) begin
+						fsm2_state <= _fsm2_wait;
+					end
+					cycle_complete <= 1;
+				end
+				_fsm2_wait: begin
+					if (push_cycle == 1) begin
+						fsm2_state <= _fsm2_load;
+					end
+					cycle <= 0;
+					cycle_complete <= 0;
+				end
+				_fsm2_load: begin
+					fsm2_state <= _fsm2_load_wait;
+					push_row <= 1; // start the row load
+				end
+				_fsm2_load_wait: begin
+					if (load_complete == 1) begin
+						// a cycle of 2^bitwidth is the dummy state that
+						// represents displaying the previously loaded state
+						// for the valid output length
+						if (cycle >= (2 ** bitwidth)) begin
+							fsm2_state <= _fsm2_hold;
+							cycle <= 0;
+						end else begin
+							fsm2_state <= _fsm2_latch;
+							cycle <= cycle + 1;
+						end
+						oe <= 0; // low for latch and low for complete
+					end
+					push_row <= 0;
+				end
+				_fsm2_latch: begin
+					fsm2_state <= _fsm2_latch_hold;
+					lat <= 1;
+				end
+				_fsm2_latch_hold: begin
+					fsm2_state <= _fsm2_load;
+					lat <= 0;
+					// the changing of lat -> 0 and oe -> 1 should be
+					// acceptable here since the values being latched are
+					// un-changing such that the outputs will always be the
+					// same value
+					oe <= 1;
+				end
+				default: fsm2_state <= _fsm2_wait;
+			endcase
+		end
+	end
+
+	// fsm3 -> load rows, handle frame complete
+	//
+	// This fsm drives the changing of rows and starting the cycle/col fsm's.
+	//
+	// R = row valid
+	// C = cycle display complete
+	//
+	//
+	// R....C
+	//       R....C
+	// ...
+	//             R....C |
+	//
+	integer fsm3_state = 0;
+	output reg frame_complete = 0;
+	reg push_cycle = 0;
+	parameter
+		_fsm3_hold = 0,
+		_fsm3_wait = 1,
+		_fsm3_cycle = 2,
+		_fsm3_cycle_wait = 3;
+
+	always @(posedge clk) begin
+		if (rst == 1) begin
+			row <= 0;
+			frame_complete <= 0;
+			push_cycle <= 0;
+			fsm3_state <= _fsm1_wait;
+		end else begin
+			case (fsm3_state)
+				_fsm3_hold: begin
+					fsm3_state <= _fsm3_wait;
+					frame_complete <= 1;
+				end
+				_fsm3_wait: begin
+					fsm3_state <= _fsm3_cycle;
+					row <= 0;
+					frame_complete <= 0;
+				end
+				_fsm3_cycle: begin
+					fsm3_state <= _fsm3_cycle_wait;
+					push_cycle <= 1; // start the cycle display
+				end
+				_fsm3_cycle_wait: begin
+					if (cycle_complete == 1) begin
+						if (row + 1 >= rows) begin
+							fsm3_state <= _fsm3_hold;
+							row <= 0;
+						end else begin
+							fsm3_state <= _fsm3_cycle;
+							row <= row + 1;
+						end
+					end
+					push_cycle <= 0;
+				end
+				default: fsm3_state <= _fsm3_wait;
+			endcase
+		end
+	end
+
 endmodule
 

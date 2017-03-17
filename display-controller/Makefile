@@ -39,7 +39,7 @@ obj/initial-image-memory.hex: image-table.py
 # Tests
 #
 
-obj/tests/test-display-driver-simple.vvp: display-driver.v
+obj/tests/test-display-driver-simple.vvp: display-driver.v display-color-encoder.v
 obj/tests/test-display-memory-simple.vvp: display-memory.v
 obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
 obj/tests/test-spi-slave-simple.vvp: spi-slave.v
