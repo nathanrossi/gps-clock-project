@@ -1,7 +1,12 @@
 
 # output
+ifeq ($(V),1)
+Q =
+QSH =
+else
 Q = @
 QSH = > /dev/null 2>&1
+endif
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
