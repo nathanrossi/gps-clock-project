@@ -51,6 +51,7 @@ obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
 obj/tests/test-spi-slave-simple.vvp: spi-slave.v
 obj/tests/test-spi-controller.vvp: spi-controller.v spi-slave.v
 obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
+obj/tests/test-top-load-spi.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(Q)-mkdir -p $(dir $@)
