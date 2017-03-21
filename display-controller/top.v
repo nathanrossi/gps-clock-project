@@ -3,13 +3,6 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	input wire clk;
 	reg rst = 0;
 
-	// divide 2
-	reg [63:0] divider = 'h0000000000000000;
-	always @(posedge clk) begin
-		divider = divider + 1;
-	end
-	wire clk_disp = clk;
-
 	output led0, led1, led2, led3, led4;
 	assign led0 = 0;
 	assign led1 = 0;
@@ -17,80 +10,40 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	assign led3 = 0;
 	assign led4 = 1;
 
-	// buffer load logic
-	//reg started = 0, flip_buffer = 0;
-	//wire [7:0] load_data;
-	reg [23:0] load_pixel = 0;
-	reg [2:0] load_row = 7;
-	reg [4:0] load_col = 31; // defaulted to the end so that it wraps on start
-	//wire load_valid, load_sot, load_eot;
-	wire frame_complete;
-	//integer load_pixel_count = 0;
-	//always @(posedge clk_disp) begin
-		//if (flip_buffer == 1) begin
-			//if (frame_complete == 1) begin
-				//mem_flip <= !mem_flip;
-				//flip_buffer <= 0;
-			//end
-		//end else begin
-			//if (load_sot == 1 && load_valid == 1) begin
-				//// first byte, setup
-				//load_pixel <= 0;
-				//load_pixel_count <= 0;
-				//load_row <= 7;
-				//load_col <= 31;
-				//mem_wen <= 0;
-				//flip_buffer <= 0;
-				//started <= 1;
-			//end else if(started == 1 && load_eot == 1) begin
-				//load_pixel <= 0;
-				//load_pixel_count <= 0;
-				//load_row <= 7;
-				//load_col <= 31;
-				//mem_wen <= 0;
-				//flip_buffer <= 1;
-				//started <= 0;
-			//end else if (started == 1 && load_valid == 1) begin
-				//load_pixel <= {load_pixel[15:0], load_data};
-				//if (load_pixel_count == 1) begin
-					//load_pixel_count <= 0;
-					//if (load_col >= 31) begin
-						//load_col <= 0;
-						//if (load_row >= 7) begin
-							//load_row <= 0;
-						//end else begin
-							//load_row <= load_row + 1;
-						//end
-					//end else begin
-						//load_col <= load_col + 1;
-					//end
-					//mem_wen <= 1;
-				//end else begin
-					//load_pixel_count <= load_pixel_count + 1;
-					//mem_wen <= 0;
-				//end
-				//flip_buffer <= 0;
-			//end else begin
-				//mem_wen <= 0;
-				//flip_buffer <= 0;
-			//end
-		//end
-	//end
+	reg mem_flip = 0;
+	wire [23:0] pixel_data;
 
-	reg mem_flip = 0, mem_wen = 0;
-	wire [23:0] mem_o;
+	reg ready = 1; // initially ready
+	wire wen, loaded;
+	wire [23:0] pixel_load;
+	wire [2:0] wrow;
+	wire [4:0] wcol;
+
+	// handle memory flip during frame complete
+	always @(posedge clk) begin
+		if (frame_complete && loaded) begin
+			mem_flip <= ~mem_flip;
+			ready <= 1;
+		end else if (loaded) begin
+			ready <= 0;
+		end
+	end
 
 	output r0, g0, b0;
 	output r1, g1, b1;
 	output a0, a1, a2;
 
-	assign a0 = row[0];
-	assign a1 = row[1];
-	assign a2 = row[2];
+	input wire spi_sclk, spi_ss, spi_mosi;
+	output wire spi_miso;
+	wire spi_ss_neg = ~spi_ss;
 
 	output wire oe, lat, oclk;
 	wire internal_oe;
 	assign oe = ~internal_oe;
+
+	assign a0 = row[0];
+	assign a1 = row[1];
+	assign a2 = row[2];
 
 	assign r0 = rgb[0];
 	assign g0 = rgb[1];
@@ -109,12 +62,12 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.columns(32),
 		.bitwidth(8)
 	) u_driver (
-		.clk(clk_disp),
+		.clk(clk),
 		.rst(rst),
 		.row(row),
 		.column(column),
 		.frame_complete(frame_complete),
-		.pixel(mem_o),
+		.pixel(pixel_data),
 		.rgb(rgb),
 		.oe(internal_oe),
 		.lat(lat),
@@ -126,33 +79,36 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.columns(32),
 		.width(24)
 	) u_memory (
-		.clk(clk_disp),
-		.wen(mem_wen),
+		.clk(clk),
 		.flip(mem_flip),
-		.wrow(load_row),
-		.wcol(load_col),
+		.wen(wen),
+		.wrow(wrow),
+		.wcol(wcol),
+		.wdata(pixel_load),
 		.rrow(row),
 		.rcol(column),
-		.wdata(load_pixel),
-		.rdata(mem_o)
+		.rdata(pixel_data)
 	);
 
-	input wire spi_sclk, spi_ss, spi_mosi;
-	output reg spi_miso = 0;
-	//input wire spi_sclk, spi_ss, spi_mosi;
-	//output wire spi_miso;
-	//spi_slave u_spi_slave (
-		//.clk(clk_disp),
-		//.rst(rst),
-		//.sclk(spi_sclk),
-		//.ss(spi_ss),
-		//.mosi(spi_mosi),
-		//.miso(spi_miso),
-		//.data(load_data),
-		//.valid(load_valid),
-		//.sot(load_sot),
-		//.eot(load_eot)
-	//);
+	spi_controller #(
+		.segments(1),
+		.rows(8),
+		.columns(32),
+		.bitwidth(8)
+	) u_loader (
+		.clk(clk),
+		.rst(rst),
+		.sclk(spi_sclk),
+		.ss(spi_ss_neg),
+		.mosi(spi_mosi),
+		.miso(spi_miso),
+		.wdata(pixel_load),
+		.wen(wen),
+		.wrow(wrow),
+		.wcol(wcol),
+		.ready(ready),
+		.loaded(loaded)
+	);
 
 endmodule
 
