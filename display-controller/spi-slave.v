@@ -33,7 +33,7 @@ module spi_slave(clk, rst, sclk, ss, mosi, miso, data, valid, sot, eot);
 			sot <= 0;
 			eot <= 0;
 		end else begin
-			if (ss == 0) begin
+			if (ss == 1) begin
 				lastsclk <= sclk;
 				if (lastsclk == 0 && sclk == 1) begin
 					word <= {word[6:0], mosi};

@@ -49,7 +49,8 @@ obj/tests/test-display-driver-simple.vvp: display-driver.v display-color-encoder
 obj/tests/test-display-memory-simple.vvp: display-memory.v
 obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
 obj/tests/test-spi-slave-simple.vvp: spi-slave.v
-obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-slave.v
+obj/tests/test-spi-controller.vvp: spi-controller.v spi-slave.v
+obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(Q)-mkdir -p $(dir $@)
@@ -69,7 +70,7 @@ obj/tests/%_run: obj/tests/%.vvp
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-slave.v
+obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 
 # synth, pnr, bitmap
 obj/%.blif: %.v
