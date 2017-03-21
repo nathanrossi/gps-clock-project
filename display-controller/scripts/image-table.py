@@ -80,6 +80,9 @@ for r in range(8):
 for d in range(2):
 	for r in range(8):
 		for c in range(32):
-			v = image[c][r]
-			print("%02x%02x%02x" % v)
+			if d == 0:
+				v = image[c][r]
+				print("%02x%02x%02x" % v)
+			else:
+				print("%02x%02x%02x" % (0, 0, 0))
 

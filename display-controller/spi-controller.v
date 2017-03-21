@@ -54,6 +54,7 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 						channel <= 0;
 					end
 				end
+				loaded <= 0;
 			end else if (started) begin
 				if (load_valid && !complete) begin
 					if (channel == 2) begin

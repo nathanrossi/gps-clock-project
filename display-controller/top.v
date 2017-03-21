@@ -21,7 +21,7 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 
 	// handle memory flip during frame complete
 	always @(posedge clk) begin
-		if (frame_complete && loaded) begin
+		if (frame_complete && (loaded || ready == 0)) begin
 			mem_flip <= ~mem_flip;
 			ready <= 1;
 		end else if (loaded) begin

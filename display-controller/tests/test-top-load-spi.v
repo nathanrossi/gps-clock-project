@@ -51,6 +51,18 @@ module test_top_load_spi;
 		@(posedge clk);
 		ss <= 1;
 
+		# 20000000
+		ss <= 1;
+
+		@(posedge clk);
+		ss <= 0;
+		clkword(8'hf0);
+		clkword(8'hff);
+		clkword(8'h00);
+		clkword(8'hff);
+		@(posedge clk);
+		ss <= 1;
+
 		# 2000000
 		ss <= 1;
 

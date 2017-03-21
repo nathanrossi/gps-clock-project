@@ -31,12 +31,15 @@ clean:
 .PHONY: all clean tests bitstream $(TESTS)
 
 display-memory.v: obj/initial-image-memory.hex
+display-color-encoder.v: obj/gamma-lookup-table.hex
+display-driver.v: display-color-encoder.v
+top.v: display-driver.v display-memory.v spi-controller.v
+
 obj/initial-image-memory.hex: scripts/image-table.py
 	@echo "[MEM  ] generating image table"
 	$(Q)-mkdir -p $(dir $@)
 	$(Q)./scripts/image-table.py > $@
 
-display-color-encoder.v: obj/gamma-lookup-table.hex
 obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
 	@echo "[MEM  ] generating gamma correction table"
 	$(Q)-mkdir -p $(dir $@)
