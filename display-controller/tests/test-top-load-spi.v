@@ -25,7 +25,7 @@ module test_top_load_spi;
 			$display("[SPI] write 0x%h to mosi", x);
 			for (i = 0; i < 8; i = i + 1) begin
 				sclk <= 0;
-				@(posedge clk); mosi <= x[7 - i];
+				@(posedge clk); mosi <= x[i];
 				@(negedge clk); sclk <= 1;
 				@(posedge clk); sclk <= 0;
 				@(posedge clk);
@@ -45,22 +45,43 @@ module test_top_load_spi;
 		// load some data into the memory
 		ss <= 0;
 		clkword(8'hf0);
-		clkword(8'hff);
-		clkword(8'h00);
-		clkword(8'hff);
+		for (i = 0; i < 32; i = i + 1) begin
+			clkword(8'hff);
+			clkword(i[7:0]);
+			clkword(8'hff);
+			@(posedge clk);
+		end
+		ss <= 1;
+
 		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		ss <= 0;
+		clkword(8'h10);
 		ss <= 1;
 
 		# 20000000
 		ss <= 1;
 
-		@(posedge clk);
 		ss <= 0;
 		clkword(8'hf0);
-		clkword(8'hff);
-		clkword(8'h00);
-		clkword(8'hff);
+		for (i = 0; i < 32; i = i + 1) begin
+			clkword(8'hff);
+			clkword(i[7:0]);
+			clkword(8'hff);
+			@(posedge clk);
+		end
+		ss <= 1;
+
 		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		ss <= 0;
+		clkword(8'h10);
 		ss <= 1;
 
 		# 2000000

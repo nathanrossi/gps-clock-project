@@ -74,7 +74,8 @@ pan = [(1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1), (1, 0, 1), (0, 0, 
 
 for r in range(8):
 	for c in range(32):
-		image[c][r] = (int((pan[r][0] * 255 * c) / 32), int((pan[r][1] * 255 * c) / 32), int((pan[r][2] * 255 * c) / 32))
+		# image[c][r] = (int((pan[r][0] * 255 * c) / 32), int((pan[r][1] * 255 * c) / 32), int((pan[r][2] * 255 * c) / 32))
+		image[c][r] = image2[c][r]
 
 
 for d in range(2):

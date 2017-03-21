@@ -52,7 +52,7 @@ module test_spi_controller;
 	endtask
 
 	initial begin
-		integer i;
+		integer i, j;
 
 		$dumpfile({"obj/", `__FILE__, ".vcd"});
 		$dumpvars(0, test_spi_controller);
@@ -69,54 +69,76 @@ module test_spi_controller;
 		@(posedge clk);
 		ss <= 1; // begin
 		clkword(8'hf0);
-		// pixel 0x0
-		clkword(8'hff);
-		clkword(8'hff);
-		clkword(8'hff);
-		@(posedge clk);
-		`assert_eq(wen, 1);
-		`assert_eq(pixel, 24'hffffff);
-		`assert_eq(row, 0);
-		`assert_eq(column, 0);
-		// pixel 1x0
-		clkword(8'hff);
-		clkword(8'h00);
-		clkword(8'hff);
-		@(posedge clk);
-		`assert_eq(wen, 1);
-		`assert_eq(pixel, 24'hff00ff);
-		`assert_eq(row, 0);
-		`assert_eq(column, 1);
-		// pixel 2x0
-		clkword(8'h00);
-		clkword(8'hed);
-		clkword(8'hff);
-		@(posedge clk);
-		`assert_eq(wen, 1);
-		`assert_eq(pixel, 24'h00edff);
-		`assert_eq(row, 0);
-		`assert_eq(column, 2);
 
-		for (i = 3; i < 32; i = i + 1) begin
+		for (i = 0; i < 32; i = i + 1) begin
+			// pixel 0x0
+			clkword(8'hff);
+			clkword(8'hff);
+			clkword(i[7:0]);
+			@(posedge clk);
+			`assert_eq(wen, 1);
+			`assert_eq(pixel, ({16'hffff, i[7:0]}));
+			`assert_eq(row, 0);
+			`assert_eq(column, i);
+		end
+		ss <= 0;
+
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		ss <= 1; // begin
+		clkword(8'hf0);
+		for (i = 0; i < 32; i = i + 1) begin
 			clkword(8'h00);
 			clkword(8'hed);
 			clkword(i[7:0]);
 			@(posedge clk);
 			`assert_eq(wen, 1);
 			`assert_eq(pixel, ({16'h00ed, i[7:0]}));
-			`assert_eq(row, 0);
+			`assert_eq(row, 1);
 			`assert_eq(column, i);
 		end
+		ss <= 0;
 
-		// pixel 0x1
-		clkword(8'h12);
-		clkword(8'h34);
-		clkword(8'h56);
 		@(posedge clk);
-		`assert_eq(wen, 1);
-		`assert_eq(pixel, 24'h123456);
-		`assert_eq(row, 1);
-		`assert_eq(column, 0);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		for (j = 2; j < 8; j = j + 1) begin
+			ss <= 1; // begin
+			clkword(8'hf0);
+			for (i = 0; i < 32; i = i + 1) begin
+				clkword(j[7:0]);
+				clkword(8'hed);
+				clkword(i[7:0]);
+				@(posedge clk);
+				`assert_eq(wen, 1);
+				`assert_eq(pixel, ({j[7:0], 8'h00ed, i[7:0]}));
+				`assert_eq(row, j);
+				`assert_eq(column, i);
+			end
+			ss <= 0;
+			@(posedge clk);
+		end
+
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		ss <= 1;
+		clkword(8'h10);
+		ss <= 0;
+		@(posedge clk); // testing for ss
+		@(posedge clk); // got cmd
+		@(posedge clk); // process eot
+		`assert_eq(loaded, 1);
+
+		# 100
+		ss <= 0;
 
 		$finish(0);
 	end

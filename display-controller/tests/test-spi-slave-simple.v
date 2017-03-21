@@ -38,7 +38,7 @@ module test_spi_slave_simple;
 		@(negedge clk);
 
 		// send a byte
-		ss = 0; // start
+		ss = 1; // start
 		@(negedge clk);
 
 		mosi = 1;
@@ -56,20 +56,24 @@ module test_spi_slave_simple;
 		@(negedge clk);
 		`assert_eq(valid, 0);
 
-		ss = 1; // release
+		ss = 0; // release
 		@(negedge clk);
 		`assert_eq(valid, 0);
 		`assert_eq(sot, 0);
 		`assert_eq(eot, 1);
 
+		@(negedge clk);
+		@(negedge clk);
+		@(negedge clk);
+
 		// multi-byte
-		ss = 0;
+		ss = 1;
 		@(negedge clk);
 
 		for (i = 0; i < 4; i = i + 1) begin
 			test_data = i;
 			for (j = 0; j < 8; j = j + 1) begin
-				mosi = test_data[7-j];
+				mosi = test_data[7 - j];
 				@(negedge clk);
 				sclk = 1;
 				@(negedge clk);
@@ -85,7 +89,7 @@ module test_spi_slave_simple;
 		@(negedge clk);
 		`assert_eq(valid, 0);
 
-		ss = 1; // release
+		ss = 0; // release
 		@(negedge clk);
 		`assert_eq(valid, 0);
 		`assert_eq(sot, 0);
