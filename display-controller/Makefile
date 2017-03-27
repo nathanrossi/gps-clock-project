@@ -22,13 +22,14 @@ tests: $(RUNTESTS)
 
 $(foreach t,$(TESTS),$(eval $t: obj/tests/$t_run))
 
+bit: bitstream
 bitstream: obj/top.bin obj/top.asc
 
 clean:
 	@echo "[CLEAN] cleaning..."
 	$(Q)-rm -rf *.vcd obj/
 
-.PHONY: all clean tests bitstream $(TESTS)
+.PHONY: all clean tests bit bitstream $(TESTS)
 
 display-memory.v: obj/initial-image-memory.hex
 display-color-encoder.v: obj/gamma-lookup-table.hex
