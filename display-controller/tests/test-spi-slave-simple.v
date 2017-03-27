@@ -6,7 +6,7 @@ module test_spi_slave_simple;
 	reg mosi = 0;
 	wire miso;
 	wire [7:0] data;
-	wire valid, sot, eot;
+	wire valid;
 
 	spi_slave u_spi_slave (
 		.clk(clk),
@@ -16,9 +16,7 @@ module test_spi_slave_simple;
 		.mosi(mosi),
 		.miso(miso),
 		.data(data),
-		.valid(valid),
-		.sot(sot),
-		.eot(eot)
+		.valid(valid)
 	);
 
 	// 5/5ns clock (10ns period)
@@ -26,6 +24,7 @@ module test_spi_slave_simple;
 		# 5 clk = !clk;
 
 	reg [7:0] test_data = 0;
+	reg [7:0] read_data = 0;
 	integer i, c, j;
 	initial begin
 		$dumpfile({"obj/", `__FILE__, ".vcd"});
@@ -43,15 +42,12 @@ module test_spi_slave_simple;
 
 		mosi = 1;
 		repeat(8) begin
-			@(negedge clk);
-			sclk = 1;
-			@(negedge clk);
-			sclk = 0;
+			@(negedge clk); @(negedge clk); sclk = 1;
+			@(negedge clk); @(negedge clk); sclk = 0;
 		end
 		// on the clock after sclk is risen for the 8th bit a byte is valid
 		`assert_eq(valid, 1);
 		`assert_eq(data, 'hff);
-		`assert_eq(sot, 1);
 
 		@(negedge clk);
 		`assert_eq(valid, 0);
@@ -59,8 +55,6 @@ module test_spi_slave_simple;
 		ss = 0; // release
 		@(negedge clk);
 		`assert_eq(valid, 0);
-		`assert_eq(sot, 0);
-		`assert_eq(eot, 1);
 
 		@(negedge clk);
 		@(negedge clk);
@@ -74,16 +68,24 @@ module test_spi_slave_simple;
 			test_data = i;
 			for (j = 0; j < 8; j = j + 1) begin
 				mosi = test_data[7 - j];
-				@(negedge clk);
-				sclk = 1;
-				@(negedge clk);
-				sclk = 0;
+				@(negedge clk); @(negedge clk); sclk = 1;
+				read_data = {read_data[6:0], miso};
+				@(negedge clk); @(negedge clk); sclk = 0;
 			end
+
+			@(posedge clk);
 			// on the clock after sclk is risen for the 8th bit a byte is valid
 			`assert_eq(valid, 1);
 			$display("got %h, expected %h", data, test_data[7:0]);
 			`assert_eq(data, test_data[7:0]);
-			`assert_eq(sot, (i == 0));
+			if (i != 0)
+				`assert_eq(read_data, i - 1);
+
+			// interword delay, to introduce some sort of timing error
+			@(posedge clk);
+			@(posedge clk);
+			@(posedge clk);
+			@(posedge clk);
 		end
 
 		@(negedge clk);
@@ -92,8 +94,42 @@ module test_spi_slave_simple;
 		ss = 0; // release
 		@(negedge clk);
 		`assert_eq(valid, 0);
-		`assert_eq(sot, 0);
-		`assert_eq(eot, 1);
+
+		// large multi-byte
+		ss = 1;
+		@(negedge clk);
+
+		for (i = 0; i < 257; i = i + 1) begin
+			test_data = i;
+			for (j = 0; j < 8; j = j + 1) begin
+				mosi = test_data[7 - j];
+				@(negedge clk); @(negedge clk); sclk = 1;
+				read_data = {read_data[6:0], miso};
+				@(negedge clk); @(negedge clk); sclk = 0;
+			end
+
+			@(posedge clk);
+			// on the clock after sclk is risen for the 8th bit a byte is valid
+			`assert_eq(valid, 1);
+			$display("got %h, expected %h", data, test_data[7:0]);
+			$display("read %h, expected %h", read_data, i - 1);
+			`assert_eq(data, test_data[7:0]);
+			if (i != 0)
+				`assert_eq(read_data, i - 1);
+
+			// interword delay, to introduce some sort of timing error
+			for (j = 0; j < 128; j = j + 1) begin
+				@(posedge clk);
+				@(posedge clk);
+				@(posedge clk);
+				@(posedge clk);
+			end
+		end
+
+		@(negedge clk);
+		`assert_eq(valid, 0);
+
+		ss = 0; // release
 
 		$finish(0);
 	end

@@ -42,11 +42,10 @@ module test_spi_controller;
 		begin
 			$display("[SPI] write 0x%h to mosi", x);
 			for (i = 0; i < 8; i = i + 1) begin
-				sclk <= 0;
-				@(posedge clk); mosi <= x[7 - i];
-				@(negedge clk); sclk <= 1;
-				@(posedge clk); sclk <= 0;
-				@(posedge clk);
+				mosi <= x[7 - i];
+				sclk <= 1;
+				@(posedge clk); @(posedge clk); sclk <= 0;
+				@(posedge clk); @(posedge clk);
 			end
 		end
 	endtask
@@ -68,6 +67,7 @@ module test_spi_controller;
 		ready <= 1;
 		@(posedge clk);
 		ss <= 1; // begin
+		@(posedge clk);
 		clkword(8'hf0);
 
 		for (i = 0; i < 32; i = i + 1) begin
@@ -75,7 +75,7 @@ module test_spi_controller;
 			clkword(8'hff);
 			clkword(8'hff);
 			clkword(i[7:0]);
-			@(posedge clk);
+
 			`assert_eq(wen, 1);
 			`assert_eq(pixel, ({16'hffff, i[7:0]}));
 			`assert_eq(row, 0);
@@ -89,12 +89,13 @@ module test_spi_controller;
 		@(posedge clk);
 
 		ss <= 1; // begin
+		@(posedge clk);
 		clkword(8'hf0);
 		for (i = 0; i < 32; i = i + 1) begin
 			clkword(8'h00);
 			clkword(8'hed);
 			clkword(i[7:0]);
-			@(posedge clk);
+
 			`assert_eq(wen, 1);
 			`assert_eq(pixel, ({16'h00ed, i[7:0]}));
 			`assert_eq(row, 1);
@@ -114,7 +115,7 @@ module test_spi_controller;
 				clkword(j[7:0]);
 				clkword(8'hed);
 				clkword(i[7:0]);
-				@(posedge clk);
+
 				`assert_eq(wen, 1);
 				`assert_eq(pixel, ({j[7:0], 8'h00ed, i[7:0]}));
 				`assert_eq(row, j);
@@ -130,11 +131,12 @@ module test_spi_controller;
 		@(posedge clk);
 
 		ss <= 1;
+		@(posedge clk);
 		clkword(8'h10);
+		@(posedge clk);
 		ss <= 0;
-		@(posedge clk); // testing for ss
-		@(posedge clk); // got cmd
-		@(posedge clk); // process eot
+		@(posedge clk); // detect ss
+		@(posedge clk);
 		`assert_eq(loaded, 1);
 
 		# 100

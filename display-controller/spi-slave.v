@@ -1,70 +1,56 @@
 
-module spi_slave(clk, rst, sclk, ss, mosi, miso, data, valid, sot, eot);
+module spi_slave(clk, rst, sclk, ss, mosi, miso, data, valid);
 	input wire clk, rst, sclk, ss;
 	input wire mosi;
-	output reg miso = 0; // not used.
+	output wire miso;
 
 	// Operation
 	// ---------
-	// Start of transfer resets address, each byte represents a byte of the
-	// colorspace. For 24bit color, 3 bytes. Bytes must be written for each
-	// pixel, once ss it pulled high at the end of a word the frame is flipped
-	// to the display.
-	//
 	// SS   ^^^^^|_________________...__________________|^^^
 	// CLK  ______|^|_|^|_|^|_|^|_...._|^|_|^|_|^|_|^|______
-	// MOSI______<  ><  ><  ><  ><....<  ><  ><  ><  >______
+	// MOSI _____<  ><  ><  ><  ><....<  ><  ><  ><  >______
+	// MISO _____<  ><  ><  ><  ><....<  ><  ><  ><  >______
 	//
 	// MSB first
 
-	reg [7:0] word = 0;
+	reg [7:0] iword = 0;
+	reg [7:0] oword = 0;
 	reg [2:0] count = 0;
-	reg first = 1;
-	reg lastsclk = 0;
 
 	output wire [7:0] data;
-	assign data = word;
-	output reg sot = 0, eot = 0, valid = 0;
+	output reg valid = 0;
+
+	assign data = iword;
+	assign miso = oword[7];
+
+	reg [1:0] sclk_buf = 0;
+	// need to buffer the input clock, this limits max performance, but
+	// provides cleaner clocking and better signal reliablity. Clock must be
+	// 4x the system clk.
+	always @(posedge clk) sclk_buf <= {sclk_buf[0], sclk};
 
 	always @(posedge clk) begin
-		if (rst == 1) begin
-			lastsclk = 0;
-			word <= 0;
-			count <= 0;
-			first <= 1;
-			sot <= 0;
-			eot <= 0;
-		end else begin
-			if (ss == 1) begin
-				if (lastsclk == 0 && sclk == 1) begin
-					word <= {word[6:0], mosi};
-					miso <= word[0];
-					if (count == 7) begin
-						count <= 0;
-						// 8 bit word recieved.
-						valid <= 1; // data is valid for the next tick
-						sot <= first;
-						first <= 0;
-					end else begin
-						count <= count + 1;
-						valid <= 0; // data is no longer valid
-					end
-				end else begin
-					valid <= 0; // data is no longer valid
-				end
-				lastsclk <= sclk;
-				eot <= 0;
-			end else begin
-				// end of transmission
-				lastsclk = 0;
-				first <= 1;
-				eot <= 1;
-				sot <= 0;
-				valid <= 0;
-				word <= 0;
-				count <= 0;
+		valid <= 0;
+		if (ss == 1 && sclk_buf == 2'b01) begin // rising_edge
+			// latch mosi
+			iword <= {iword[6:0], mosi};
+
+			count <= count + 1; // increment bit
+			if (count == 7) begin
+				valid <= 1;
 			end
 		end
 	end
+
+	always @(posedge clk) begin
+		if (ss == 1 && sclk_buf == 2'b10) begin // falling_edge
+			// latch miso
+			oword <= {oword[6:0], 1'b0};
+			if (count == 0) begin
+				oword <= iword;
+			end
+		end
+	end
+
 endmodule
 

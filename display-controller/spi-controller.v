@@ -24,16 +24,17 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 
 	// buffer load logic
 	parameter
-		_load_row_cmd = 0,
-		_end_cmd = 1;
+		_cmd_invalid = 0,
+		_cmd_load_row = 1,
+		_cmd_end = 2;
 
 	reg started = 0;
-	reg cmd = 0;
+	reg integer cmd = 0;
 	reg complete = 0;
 	output reg loaded = 0;
 
 	wire [7:0] load_data;
-	wire load_valid, load_sot, load_eot;
+	wire load_valid;
 
 	always @(posedge clk) begin
 		if (rst == 1) begin
@@ -45,26 +46,28 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 			channel <= 0;
 			cmd <= 0;
 		end else begin
+			wen <= 0;
 			if (!started && ready) begin
-				// allow for loading of data
-				if (load_sot && load_valid) begin
-					// check command, needs to be 0xf0
+				// check command, needs to be 0xf0
+				if (load_valid == 1) begin
 					if (load_data == 8'hf0) begin
 						// start of load
 						started <= 1;
 						segment <= 0;
 						channel <= 0;
 						column <= 0;
-						cmd <= _load_row_cmd;
+						cmd <= _cmd_load_row;
 					end else if (load_data == 8'h10) begin
 						started <= 1;
-						cmd <= _end_cmd;
+						cmd <= _cmd_end;
+					end else begin
+						cmd <= _cmd_invalid;
 					end
 				end
 				loaded <= 0;
 			end else if (started) begin
 				case (cmd)
-					_load_row_cmd: begin
+					_cmd_load_row: begin
 						if (load_valid) begin
 							if (channel == 2) begin
 								channel <= 0;
@@ -75,14 +78,14 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 									if (column == columns - 1) begin
 										column <= 0;
 										// loaded columns, next row
-										//if (row == rows - 1) begin
-											//row <= 0;
-											//// loaded rows, done!, ignore the rest
-											//// until EOT
-											//complete <= 1;
-										//end else begin
-											//row <= row + 1;
-										//end
+										if (row == rows - 1) begin
+											row <= 0;
+											// loaded rows, done!, ignore the rest
+											// until EOT
+											complete <= 1;
+										end else begin
+											row <= row + 1;
+										end
 									end else begin
 										column <= column + 1;
 									end
@@ -97,17 +100,14 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 							end
 							// serial load into the wdata reg, dropping the oldest
 							// word
-							//wdata <= {wdata[(segments * bitwidth * 3) - bitwidth - 1:0], load_data};
-							wdata <= {load_data, load_data, load_data};
-						end else if (load_eot) begin
-							if (started)
-								started <= 0;
-						end else begin
-							wen <= 0;
+							wdata <= {wdata[(segments * bitwidth * 3) - bitwidth - 1:0], load_data};
+							//wdata <= {load_data, load_data, load_data};
+						end else if (ss == 0) begin
+							started <= 0;
 						end
 					end
-					_end_cmd: begin
-						if (load_eot) begin
+					_cmd_end: begin
+						if (ss == 0) begin
 							started <= 0;
 							complete <= 1;
 							loaded <= 1;
@@ -118,6 +118,11 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 							wcol <= 0;
 							wrow <= 0;
 							wen <= 0;
+						end
+					end
+					_cmd_invalid: begin
+						if (ss == 0) begin
+							started <= 0;
 						end
 					end
 				endcase
@@ -133,9 +138,7 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 		.mosi(mosi),
 		.miso(miso),
 		.data(load_data),
-		.valid(load_valid),
-		.sot(load_sot),
-		.eot(load_eot)
+		.valid(load_valid)
 	);
 
 endmodule
