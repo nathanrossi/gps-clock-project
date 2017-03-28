@@ -12,6 +12,7 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 	parameter rows = 8; // number of addressable rows
 	parameter columns = 32; // number of bits per line
 	parameter bitwidth = 8;
+	parameter cyclewidth = 8;
 
 	input clk, rst;
 	wire clk, rst;
@@ -23,7 +24,7 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 	display_color_encoder #(
 		.segments(segments),
 		.bitwidth(bitwidth),
-		.cyclewidth(bitwidth)
+		.cyclewidth(cyclewidth)
 	) u_color_encoder (
 		.clk(clk),
 		.pixel(pixel),
