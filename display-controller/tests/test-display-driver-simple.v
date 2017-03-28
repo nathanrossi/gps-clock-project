@@ -13,7 +13,8 @@ module test_display_driver_simple;
 		.segments(1),
 		.rows(8),
 		.columns(32),
-		.bitwidth(8)
+		.bitwidth(8),
+		.cyclewidth(8)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),

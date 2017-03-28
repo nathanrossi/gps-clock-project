@@ -12,7 +12,7 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	parameter integer rows = 8; // number of addressable rows
 	parameter integer columns = 32; // number of bits per line
 	parameter integer bitwidth = 8;
-	parameter integer cyclewidth = 4;
+	parameter integer cyclewidth = 8;
 
 	input clk, rst;
 	wire clk, rst;
