@@ -71,13 +71,14 @@ if __name__ == "__main__":
 	gamma = 2.2
 	inbits = 8
 	outbits = 8
+	outbitshex = (1 if (outbits % 4) != 0 else 0) + (outbits / 4)
 
 	insize = (2 ** inbits) - 1
 	outsize = (2 ** outbits) - 1
 
 	for a in range(insize + 1):
 		v = min(outsize, int(outsize * (float(a) / insize) ** (gamma)))
-		print(("%%0%dx" % (outbits / 4)) % v)
+		print(("%%0%dx" % (outbitshex)) % v)
 
 	# print("simple total memory needed = %d B" % ((insize) * outbits / 8))
 	# print("sRGB total memory needed = %d B" % ((insize ** 3) * outbits / 8))
