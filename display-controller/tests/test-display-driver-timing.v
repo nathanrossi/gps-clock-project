@@ -14,7 +14,8 @@ module test_display_driver_timing;
 		.segments(1),
 		.rows(8),
 		.columns(32),
-		.bitwidth(8)
+		.bitwidth(8),
+		.cyclewidth(10)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
@@ -29,8 +30,8 @@ module test_display_driver_timing;
 	);
 
 	// 5/5ns clock (10ns period)
-	parameter clkfreq = 12000000;
-	parameter period = (1000000000 / 12000000);
+	parameter clkfreq = 40000000;
+	parameter period = ((1 * 1000 * 1000 * 1000) / clkfreq);
 	always
 		# period clk = !clk;
 
