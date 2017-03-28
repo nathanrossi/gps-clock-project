@@ -82,7 +82,7 @@ obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-cont
 obj/%.blif: %.v
 	$(Q)-mkdir -p $(dir $@)
 	@echo "[SYNTH] $@"
-	$(Q)$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(QSH)
+	$(Q)$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(QSH)
 
 obj/%.asc: obj/%.blif %.pcf
 	$(Q)-mkdir -p $(dir $@)
