@@ -1,12 +1,12 @@
 
-module display_color_encoder(clk, pixel, cpixel);
-	parameter segments = 1;
-	parameter cyclewidth = 8;
-	parameter bitwidth = 8;
+module display_color_encoder (clk, pixel, cpixel);
+	parameter integer segments = 1;
+	parameter integer bitwidth = 8;
+	parameter integer cyclewidth = 8;
 
 	input wire clk;
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
-	output reg [((bitwidth * 3) * segments) - 1:0] cpixel = 0;
+	output reg [((cyclewidth * 3) * segments) - 1:0] cpixel = 0;
 
 	// Gamma Correction lookup table
 	//
@@ -45,7 +45,7 @@ module display_color_encoder(clk, pixel, cpixel);
 			integer z;
 			always @(posedge clk) begin
 				z = g * bitwidth;
-				cpixel[z +:bitwidth] <= gamma_lookup_data[pixel[z +:bitwidth]];
+				cpixel[z +:cyclewidth] <= gamma_lookup_data[pixel[z +:bitwidth]];
 			end
 		end
 	endgenerate

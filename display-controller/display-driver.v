@@ -7,18 +7,18 @@
 // Pixel Displays).
 //
 
-module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat, oclk);
-	parameter segments = 1;
-	parameter rows = 8; // number of addressable rows
-	parameter columns = 32; // number of bits per line
-	parameter bitwidth = 8;
-	parameter cyclewidth = 8;
+module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, lat, oclk);
+	parameter integer segments = 1;
+	parameter integer rows = 8; // number of addressable rows
+	parameter integer columns = 32; // number of bits per line
+	parameter integer bitwidth = 8;
+	parameter integer cyclewidth = 4;
 
 	input clk, rst;
 	wire clk, rst;
 
 	// Color Correction (gamma correction)
-	input wire [((cyclewidth * 3) * segments) - 1:0] pixel;
+	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
 	wire [((cyclewidth * 3) * segments) - 1:0] cpixel;
 
 	display_color_encoder #(
@@ -220,7 +220,7 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 				end
 				_fsm2_load_wait: begin
 					if (load_complete == 1) begin
-						// a cycle of 2^bitwidth is the dummy state that
+						// a cycle of 2^cyclewidth is the dummy state that
 						// represents displaying the previously loaded state
 						// for the valid output length
 						if (cycle >= (2 ** cyclewidth)) begin

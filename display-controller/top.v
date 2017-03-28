@@ -6,10 +6,10 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	output reg [4:0] leds = 5'b10000;
 
 	// display parameters
-	parameter segments = 1;
-	parameter rows = 8;
-	parameter columns = 32;
-	parameter bitdepth = 8;
+	parameter integer segments = 1;
+	parameter integer rows = 8;
+	parameter integer columns = 32;
+	parameter integer bitdepth = 8;
 
 	// internal re-wiring signals/logic
 	wire internal_oe;
@@ -20,6 +20,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	wire [$clog2(columns) - 1:0] column;
 	wire [$clog2(columns) - 1:0] wcol;
 	wire [(segments * 3) - 1:0] orgb;
+	wire frame_complete;
 
 	reg mem_flip = 0;
 	reg ready = 1; // initially ready
@@ -54,7 +55,8 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.segments(segments),
 		.rows(rows),
 		.columns(columns),
-		.bitwidth(bitdepth)
+		.bitwidth(bitdepth),
+		.cyclewidth(8)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
