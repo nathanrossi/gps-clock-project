@@ -18,8 +18,8 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 	wire clk, rst;
 
 	// Color Correction (gamma correction)
-	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
-	wire [((bitwidth * 3) * segments) - 1:0] cpixel;
+	input wire [((cyclewidth * 3) * segments) - 1:0] pixel;
+	wire [((cyclewidth * 3) * segments) - 1:0] cpixel;
 
 	display_color_encoder #(
 		.segments(segments),
@@ -41,7 +41,7 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 	assign column = column_counter[0 +:$clog2(columns)];
 
 	// cycle counter (must have one more bit to store a post stage)
-	reg [bitwidth:0] cycle = 0;
+	reg [cyclewidth:0] cycle = 0;
 
 	// RGB pixel values to bits
 	integer i = 0, c = 0;
@@ -52,8 +52,8 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 			for (i = 0; i < segments; i = i + 1) begin
 				for (c = 0; c < 3; c = c + 1) begin
 					rgb[(3 * i) + c] <=
-						(cpixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] >= cycle[0 +:bitwidth]) &&
-						(cpixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] != 0);
+						(cpixel[(cyclewidth * 3 * i) + (cyclewidth * c) +:cyclewidth] >= cycle[0 +:cyclewidth]) &&
+						(cpixel[(cyclewidth * 3 * i) + (cyclewidth * c) +:cyclewidth] != 0);
 				end
 			end
 		end
@@ -223,7 +223,7 @@ module display_driver(clk, rst, frame_complete, row, column, pixel, rgb, oe, lat
 						// a cycle of 2^bitwidth is the dummy state that
 						// represents displaying the previously loaded state
 						// for the valid output length
-						if (cycle >= (2 ** bitwidth)) begin
+						if (cycle >= (2 ** cyclewidth)) begin
 							fsm2_state <= _fsm2_hold;
 							cycle <= 0;
 						end else begin
