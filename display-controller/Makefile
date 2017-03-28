@@ -3,6 +3,26 @@
 Q = $(if $(filter $(V),2),,@)
 QSH = $(if $(V),,> /dev/null 2>&1)
 
+# cmd runner
+cmd-pf-call = @ \
+	mkdir -p $(dir $@); \
+	if ! $(1) > $@.log 2>&1; then \
+		cat $@.log $(QSH); \
+		printf " %-6s  `tput setaf 1`%4s`tput sgr0`  %s\n" "$(2)" "fail" "$(3)"; \
+	else \
+		printf " %-6s  `tput setaf 2`%4s`tput sgr0`  %s\n" "$(2)" "pass" "$(3)"; \
+	fi; \
+	rm $@.log
+
+cmd-call = @ \
+	mkdir -p $(dir $@); \
+	printf " %-6s  %4s  %s\n" "$(2)" "" "$(3)"; \
+	if ! $(1) > $@.log 2>&1; then \
+		cat $@.log $(QSH); \
+		printf " %-6s  `tput setaf 1`%4s`tput sgr0`  %s\n" "$(2)" "fail" "$(3)"; \
+	fi; \
+	rm $@.log
+
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
 ARACHNEPNR = $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
@@ -26,8 +46,7 @@ bit: bitstream
 bitstream: obj/top.bin obj/top.asc
 
 clean:
-	@echo "[CLEAN] cleaning..."
-	$(Q)-rm -rf *.vcd obj/
+	$(call cmd-call,rm -rf *.vcd obj/,CLEAN,cleaning...)
 
 .PHONY: all clean tests bit bitstream $(TESTS)
 
@@ -36,14 +55,10 @@ display-driver.v: display-color-encoder.v
 top.v: display-driver.v display-memory.v spi-controller.v
 
 obj/initial-image-memory.hex: scripts/image-table.py
-	@echo "[MEM  ] generating image table"
-	$(Q)-mkdir -p $(dir $@)
-	$(Q)./scripts/image-table.py > $@
+	$(call cmd-call,./scripts/image-table.py > $@,MEM,generating image table)
 
 obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
-	@echo "[MEM  ] generating gamma correction table"
-	$(Q)-mkdir -p $(dir $@)
-	$(Q)./scripts/gamma-correction-tables.py > $@
+	$(call cmd-call,./scripts/gamma-correction-tables.py > $@,MEM,generating gamma correction table)
 #
 # Tests
 #
@@ -58,18 +73,10 @@ obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-en
 obj/tests/test-top-load-spi.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 
 obj/tests/%.vvp: tests/%.v tests/helpers.v
-	$(Q)-mkdir -p $(dir $@)
-	@echo "[SIMUL] $(patsubst obj/tests/%.vvp,%,$@)"
-	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^) $(QSH)
+	$(call cmd-call,$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^),SIM,$(patsubst obj/tests/%.vvp,%,$@))
 
 obj/tests/%_run: obj/tests/%.vvp
-	@echo "[TEST ] $(patsubst obj/tests/%_run,%,$@)...";
-	$(Q)-mkdir -p $(dir $@)
-	$(Q)if ! $(VVP) -n $^ -lxt2 $(QSH); then \
-			echo "        $(patsubst obj/tests/%_run,%,$@)... Failed"; \
-		else \
-			echo "        $(patsubst obj/tests/%_run,%,$@)... Passed"; \
-		fi
+	$(call cmd-pf-call,$(VVP) -n $^ -lxt2,TEST,$(patsubst obj/tests/%_run,%,$@))
 
 #
 # Bistream/Synth/etc.
@@ -79,18 +86,12 @@ obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-cont
 
 # synth, pnr, bitmap
 obj/%.blif: %.v
-	$(Q)-mkdir -p $(dir $@)
-	@echo "[SYNTH] $@"
-	$(Q)$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(QSH)
+	$(call cmd-call,$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@",SYNTH,$@)
 
 obj/%.asc: obj/%.blif %.pcf
-	$(Q)-mkdir -p $(dir $@)
-	@echo "[P-N-R] $@"
-	$(Q)$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^))
-	$(Q)$(ICETIME) -C $(ICEBOX)/chipdb-1k.txt -d hx1k -P tq144 -p $(firstword $(filter %.pcf,$^)) -c 12 $@
+	$(call cmd-call,$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^)),P-N-R,$@)
+	$(call cmd-pf-call,$(ICETIME) -C $(ICEBOX)/chipdb-1k.txt -d hx1k -P tq144 -p $(firstword $(filter %.pcf,$^)) -c 12 $@,TIMING,$@)
 
 obj/%.bin: obj/%.asc
-	$(Q)-mkdir -p $(dir $@)
-	@echo "[BMAP ] $@"
-	$(Q)$(ICEPACK) $^ $@ $(QSH)
+	$(call cmd-call,$(ICEPACK) $^ $@,BITMAP,$@)
 
