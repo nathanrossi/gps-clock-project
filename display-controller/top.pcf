@@ -1,24 +1,24 @@
 
 set_io clk 21
 
-set_io r0 112
-set_io g0 113
-set_io b0 114
-set_io r1 115
-set_io g1 116
-set_io b1 117
-set_io a0 62
-set_io a1 61
-set_io a2 60
+set_io rgb[0] 112
+set_io rgb[1] 113
+set_io rgb[2] 114
+set_io rgb[3] 115
+set_io rgb[4] 116
+set_io rgb[5] 117
+set_io a[0] 62
+set_io a[1] 61
+set_io a[2] 60
 set_io oe 56
 set_io lat 48
 set_io oclk 47
 
-set_io led0 99
-set_io led1 98
-set_io led2 97
-set_io led3 96
-set_io led4 95
+set_io leds[0] 99
+set_io leds[1] 98
+set_io leds[2] 97
+set_io leds[3] 96
+set_io leds[4] 95
 
 set_io spi_sclk 118
 set_io spi_ss 119

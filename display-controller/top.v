@@ -1,23 +1,44 @@
 
-module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
+module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
 	input wire clk;
 	reg rst = 0;
 
-	output led0, led1, led2, led3, led4;
-	assign led0 = 0;
-	assign led1 = 0;
-	assign led2 = 0;
-	assign led3 = 0;
-	assign led4 = 1;
+	output reg [4:0] leds = 5'b10000;
+
+	// display parameters
+	parameter segments = 1;
+	parameter rows = 8;
+	parameter columns = 32;
+	parameter bitdepth = 8;
+
+	// internal re-wiring signals/logic
+	wire internal_oe;
+
+	// inter-module signals
+	wire [$clog2(rows) - 1:0] row;
+	wire [$clog2(rows) - 1:0] wrow;
+	wire [$clog2(columns) - 1:0] column;
+	wire [$clog2(columns) - 1:0] wcol;
+	wire [(segments * 3) - 1:0] orgb;
 
 	reg mem_flip = 0;
-	wire [23:0] pixel_data;
-
 	reg ready = 1; // initially ready
 	wire wen, loaded;
-	wire [23:0] pixel_load;
-	wire [2:0] wrow;
-	wire [4:0] wcol;
+	wire [(bitdepth * 3 * segments) - 1:0] pixel_load;
+	wire [(bitdepth * 3 * segments) - 1:0] pixel_data;
+
+	// outputs to display
+	output wire oe, lat, oclk;
+	output wire [2:0] a;
+	output wire [5:0] rgb;
+	assign oe = ~internal_oe;
+	assign a = row[2:0];
+	assign rgb = {orgb, orgb};
+
+	// i/o for SPI interface
+	input wire spi_sclk, spi_ss, spi_mosi;
+	output wire spi_miso;
+	wire spi_ss_neg = ~spi_ss;
 
 	// handle memory flip during frame complete
 	always @(posedge clk) begin
@@ -29,38 +50,11 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		end
 	end
 
-	output r0, g0, b0;
-	output r1, g1, b1;
-	output a0, a1, a2;
-
-	input wire spi_sclk, spi_ss, spi_mosi;
-	output wire spi_miso;
-	wire spi_ss_neg = ~spi_ss;
-
-	output wire oe, lat, oclk;
-	wire internal_oe;
-	assign oe = ~internal_oe;
-
-	assign a0 = row[0];
-	assign a1 = row[1];
-	assign a2 = row[2];
-
-	assign r0 = rgb[0];
-	assign g0 = rgb[1];
-	assign b0 = rgb[2];
-	assign r1 = rgb[0];
-	assign g1 = rgb[1];
-	assign b1 = rgb[2];
-
-	wire [2:0] row;
-	wire [4:0] column;
-	wire [2:0] rgb;
-
 	display_driver #(
-		.segments(1),
-		.rows(8),
-		.columns(32),
-		.bitwidth(8)
+		.segments(segments),
+		.rows(rows),
+		.columns(columns),
+		.bitwidth(bitdepth)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
@@ -68,16 +62,17 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 		.column(column),
 		.frame_complete(frame_complete),
 		.pixel(pixel_data),
-		.rgb(rgb),
+		.rgb(orgb),
 		.oe(internal_oe),
 		.lat(lat),
 		.oclk(oclk)
 	);
 
 	display_memory #(
-		.rows(8),
-		.columns(32),
-		.width(24)
+		.segments(segments),
+		.rows(rows),
+		.columns(columns),
+		.width(bitdepth * 3)
 	) u_memory (
 		.clk(clk),
 		.flip(mem_flip),
@@ -91,10 +86,10 @@ module top(clk, led0, led1, led2, led3, led4, r0, g0, b0, r1, g1, b1, a0, a1, a2
 	);
 
 	spi_controller #(
-		.segments(1),
-		.rows(8),
-		.columns(32),
-		.bitwidth(8)
+		.segments(segments),
+		.rows(rows),
+		.columns(columns),
+		.bitwidth(bitdepth)
 	) u_loader (
 		.clk(clk),
 		.rst(rst),
