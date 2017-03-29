@@ -30,8 +30,11 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 
 	reg started = 0;
 	reg integer cmd = 0;
-	reg complete = 0;
 	output reg loaded = 0;
+	reg complete = 0;
+
+	reg last_ready = 0;
+	reg mem_ready = 0;
 
 	wire [7:0] load_data;
 	wire load_valid;
@@ -39,23 +42,39 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			started <= 0;
+			loaded <= 0;
 			complete <= 0;
 			row <= 0;
 			column <= 0;
 			segment <= 0;
 			channel <= 0;
 			cmd <= 0;
-		end else begin
 			wen <= 0;
-			if (!started && ready) begin
-				// check command, needs to be 0xf0
+
+			last_ready <= 0;
+			mem_ready <= 0;
+		end else begin
+			// wen is low otherwise
+			wen <= 0;
+
+			// check for frame flip, when ready goes 0 -> 1
+			if (ready == 1 && last_ready == 0) begin
+				mem_ready <= 1;
+			end else if (ready == 0) begin
+				mem_ready <= 0;
+			end
+			last_ready <= ready;
+
+			if (!started) begin
+				// check command, needs to be 0xfx where x = row
 				if (load_valid == 1) begin
-					if (load_data == 8'hf0) begin
+					if (load_data[7:4] == 4'hf) begin
 						// start of load
 						started <= 1;
 						segment <= 0;
 						channel <= 0;
 						column <= 0;
+						row <= load_data[3:0];
 						cmd <= _cmd_load_row;
 					end else if (load_data == 8'h10) begin
 						started <= 1;
@@ -63,7 +82,16 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 					end else begin
 						cmd <= _cmd_invalid;
 					end
+
+					// if the last command was a completion, and mem_ready,
+					// allow writing and more complete marking
+					if (complete == 1 && mem_ready == 1) begin
+						complete <= 0;
+					end
 				end
+
+				// the loaded signal is only high for one cycle, to tell the
+				// flipper that the memory was populated for flipping
 				loaded <= 0;
 			end else if (started) begin
 				case (cmd)
@@ -77,24 +105,15 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 									// loaded each segment, next column
 									if (column == columns - 1) begin
 										column <= 0;
-										// loaded columns, next row
-										if (row == rows - 1) begin
-											row <= 0;
-											// loaded rows, done!, ignore the rest
-											// until EOT
-											complete <= 1;
-										end else begin
-											row <= row + 1;
-										end
 									end else begin
 										column <= column + 1;
 									end
+									wcol <= column;
+									wrow <= row;
+									wen <= (complete == 0);
 								end else begin
 									segment <= segment + 1;
 								end
-								wen <= 1;
-								wcol <= column;
-								wrow <= row;
 							end else begin
 								channel <= channel + 1;
 							end
@@ -110,14 +129,13 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 						if (ss == 0) begin
 							started <= 0;
 							complete <= 1;
-							loaded <= 1;
+							loaded <= (complete == 0);
 							row <= 0;
 							column <= 0;
 							segment <= 0;
 							channel <= 0;
 							wcol <= 0;
 							wrow <= 0;
-							wen <= 0;
 						end
 					end
 					_cmd_invalid: begin

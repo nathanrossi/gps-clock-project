@@ -90,7 +90,7 @@ module test_spi_controller;
 
 		ss <= 1; // begin
 		@(posedge clk);
-		clkword(8'hf0);
+		clkword(8'hf1);
 		for (i = 0; i < 32; i = i + 1) begin
 			clkword(8'h00);
 			clkword(8'hed);
@@ -110,14 +110,14 @@ module test_spi_controller;
 
 		for (j = 2; j < 8; j = j + 1) begin
 			ss <= 1; // begin
-			clkword(8'hf0);
+			clkword({4'hf, j[3:0]});
 			for (i = 0; i < 32; i = i + 1) begin
 				clkword(j[7:0]);
 				clkword(8'hed);
 				clkword(i[7:0]);
 
 				`assert_eq(wen, 1);
-				`assert_eq(pixel, ({j[7:0], 8'h00ed, i[7:0]}));
+				`assert_eq(pixel, ({j[7:0], 8'hed, i[7:0]}));
 				`assert_eq(row, j);
 				`assert_eq(column, i);
 			end
@@ -135,9 +135,77 @@ module test_spi_controller;
 		clkword(8'h10);
 		@(posedge clk);
 		ss <= 0;
-		@(posedge clk); // detect ss
+		@(posedge clk); `assert_eq(loaded, 0); // detect ss
+		@(posedge clk); `assert_eq(loaded, 1);
+		@(posedge clk); `assert_eq(loaded, 0);
+		ready <= 0;
+		@(posedge clk); `assert_eq(loaded, 0);
+
+		// test non-ready load attempt
+		repeat (2) begin
+			@(posedge clk);
+			@(posedge clk);
+			`assert_eq(loaded, 0);
+			ready <= 0;
+			@(posedge clk);
+			for (j = 0; j < 8; j = j + 1) begin
+				ss <= 1; // begin
+				clkword({4'hf, j[3:0]});
+				for (i = 0; i < 32; i = i + 1) begin
+					clkword(j[7:0]);
+					clkword(8'hed);
+					clkword(i[7:0]);
+
+					`assert_eq(wen, 0);
+					`assert_eq(pixel, ({j[7:0], 8'hed, i[7:0]}));
+					`assert_eq(row, j);
+					`assert_eq(column, i);
+				end
+				ss <= 0;
+				@(posedge clk);
+			end
+
+			ss <= 1;
+			@(posedge clk);
+			clkword(8'h10);
+			@(posedge clk);
+			ss <= 0;
+			@(posedge clk); `assert_eq(loaded, 0);
+			@(posedge clk); `assert_eq(loaded, 0);
+			@(posedge clk); `assert_eq(loaded, 0);
+		end
+
+		// test ready after non-ready
 		@(posedge clk);
-		`assert_eq(loaded, 1);
+		@(posedge clk);
+		`assert_eq(loaded, 0);
+		ready <= 1;
+		@(posedge clk);
+		for (j = 0; j < 8; j = j + 1) begin
+			ss <= 1; // begin
+			clkword({4'hf, j[3:0]});
+			for (i = 0; i < 32; i = i + 1) begin
+				clkword(j[7:0]);
+				clkword(8'hed);
+				clkword(i[7:0]);
+
+				`assert_eq(wen, 1);
+				`assert_eq(pixel, ({j[7:0], 8'hed, i[7:0]}));
+				`assert_eq(row, j);
+				`assert_eq(column, i);
+			end
+			ss <= 0;
+			@(posedge clk);
+		end
+
+		ss <= 1;
+		@(posedge clk);
+		clkword(8'h10);
+		@(posedge clk);
+		ss <= 0;
+		@(posedge clk); `assert_eq(loaded, 0);
+		@(posedge clk); `assert_eq(loaded, 1);
+		@(posedge clk); `assert_eq(loaded, 0);
 
 		# 100
 		ss <= 0;
