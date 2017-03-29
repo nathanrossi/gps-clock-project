@@ -6,7 +6,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	output reg [4:0] leds = 5'b10000;
 
 	// display parameters
-	parameter integer segments = 1;
+	parameter integer segments = 2;
 	parameter integer rows = 8;
 	parameter integer columns = 32;
 	parameter integer bitdepth = 8;
@@ -34,7 +34,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	output wire [5:0] rgb;
 	assign oe = ~internal_oe;
 	assign a = row[2:0];
-	assign rgb = {orgb, orgb};
+	assign rgb = orgb;
 
 	// i/o for SPI interface
 	input wire spi_sclk, spi_ss, spi_mosi;
