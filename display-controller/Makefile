@@ -10,6 +10,7 @@ cmd-pf-call = @ \
 		cat $@.log $(QSH); \
 		printf " %-6s  `tput setaf 1`%4s`tput sgr0`  %s\n" "$(2)" "fail" "$(3)"; \
 	else \
+		cat $@.log $(QSH); \
 		printf " %-6s  `tput setaf 2`%4s`tput sgr0`  %s\n" "$(2)" "pass" "$(3)"; \
 	fi; \
 	rm $@.log
@@ -22,6 +23,10 @@ cmd-call = @ \
 		printf " %-6s  `tput setaf 1`%4s`tput sgr0`  %s\n" "$(2)" "fail" "$(3)"; \
 	fi; \
 	rm $@.log
+
+cmd-null = @ \
+	mkdir -p $(dir $@); \
+	printf " %-6s  %4s  %s\n" "$(1)" "" "$(2)"
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
@@ -54,11 +59,10 @@ display-color-encoder.v: obj/gamma-lookup-table.hex
 display-driver.v: display-color-encoder.v
 top.v: display-driver.v display-memory.v spi-controller.v
 
-obj/initial-image-memory.hex: scripts/image-table.py
-	$(call cmd-call,./scripts/image-table.py > $@,MEM,generating image table)
-
 obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
-	$(call cmd-call,./scripts/gamma-correction-tables.py > $@,MEM,generating gamma correction table)
+	$(call cmd-null,MEM,generating gamma correction table)
+	@./scripts/gamma-correction-tables.py > $@
+
 #
 # Tests
 #
