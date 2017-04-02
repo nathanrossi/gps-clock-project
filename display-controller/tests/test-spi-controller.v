@@ -127,6 +127,10 @@ module test_spi_controller;
 			end
 			ss <= 0;
 			@(negedge clk);
+			@(negedge clk);
+			@(negedge clk);
+			@(negedge clk);
+			@(negedge clk);
 		end
 
 		@(negedge clk);
@@ -162,9 +166,7 @@ module test_spi_controller;
 					@(negedge clk);
 
 					`assert_eq(wen, 0);
-					`assert_eq(pixel, ({j[7:0], 8'hed, i[7:0]}));
-					`assert_eq(row, j);
-					`assert_eq(column, i);
+					// wdata, wrow and wcol are not nessecarily valid data
 				end
 				ss <= 0;
 				@(negedge clk);
@@ -201,6 +203,10 @@ module test_spi_controller;
 				`assert_eq(column, i);
 			end
 			ss <= 0;
+			@(negedge clk);
+			@(negedge clk);
+			@(negedge clk);
+			@(negedge clk);
 			@(negedge clk);
 		end
 
@@ -245,6 +251,10 @@ module test_spi_controller;
 					ss <= 0;
 					@(negedge clk);
 					`assert_eq(wen, 0);
+					@(negedge clk);
+					@(negedge clk);
+					@(negedge clk);
+					@(negedge clk);
 				end
 
 				ss <= 1;

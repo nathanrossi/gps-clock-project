@@ -110,8 +110,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.wrow(wrow),
 		.wcol(wcol),
 		.ready(ready),
-		.loaded(loaded),
-		.debug(debug)
+		.loaded(loaded)
 	);
 
 endmodule
