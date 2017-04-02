@@ -48,7 +48,6 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 			channel <= 0;
 			cmd <= 0;
 			wen <= 0;
-			wen_next <= 0;
 
 			last_ready <= 0;
 			mem_ready <= 0;
