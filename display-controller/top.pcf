@@ -25,3 +25,12 @@ set_io spi_ss 119
 set_io spi_mosi 45
 set_io spi_miso 44
 
+set_io debug[0] 78
+set_io debug[1] 79
+set_io debug[2] 80
+set_io debug[3] 81
+set_io debug[4] 87
+set_io debug[5] 88
+set_io debug[6] 90
+set_io debug[7] 91
+

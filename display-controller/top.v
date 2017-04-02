@@ -1,7 +1,9 @@
 
-module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso);
+module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso, debug);
 	input wire clk;
 	reg rst = 0;
+
+	output reg [7:0] debug = 0;
 
 	output reg [4:0] leds = 5'b10000;
 
@@ -43,10 +45,14 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 
 	// handle memory flip during frame complete
 	always @(posedge clk) begin
-		if (frame_complete && (loaded || ready == 0)) begin
+		if (frame_complete && (ready == 0)) begin
+			// was not ready, thus must have a frame loaded, so lets flip it
+			// in. And because we have flipped it in, we are ready to accept
+			// another frame to be loaded
 			mem_flip <= ~mem_flip;
 			ready <= 1;
-		end else if (loaded) begin
+		end else if (ready && loaded) begin
+			// latch the loaded stated and become non-ready
 			ready <= 0;
 		end
 	end
@@ -104,7 +110,8 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.wrow(wrow),
 		.wcol(wcol),
 		.ready(ready),
-		.loaded(loaded)
+		.loaded(loaded),
+		.debug(debug)
 	);
 
 endmodule
