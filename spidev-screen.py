@@ -6,41 +6,6 @@ import spidev
 import time
 import datetime
 
-image = [
-		[(255, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 255, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 255), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-		[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-	]
-
 font = {
 		"A" : [ [0, 1, 1, 1, 0],
 				[1, 0, 0, 0, 1],
@@ -208,17 +173,316 @@ font_small = {
 				[0,1,1,1],
 				[0,0,0,1],
 				[0,1,1,0]],
-		":" : [ [0,0,0,0],
-				[0,0,1,0],
-				[0,0,0,0],
-				[0,0,1,0],
-				[0,0,0,0]],
+		":" : [ [0],
+				[1],
+				[0],
+				[1],
+				[0]],
 		" " : [ [0,0,0,0],
 				[0,0,0,0],
 				[0,0,0,0],
 				[0,0,0,0],
 				[0,0,0,0]],
 		}
+
+
+font_smallest = {
+		"0" : [ [1,1,1],
+				[1,0,1],
+				[1,0,1],
+				[1,0,1],
+				[1,1,1]],
+		"1" : [ [0,1,0],
+				[1,1,0],
+				[0,1,0],
+				[0,1,0],
+				[0,1,0]],
+		"2" : [ [1,1,1],
+				[0,0,1],
+				[1,1,1],
+				[1,0,0],
+				[1,1,1]],
+		"3" : [ [1,1,1],
+				[0,0,1],
+				[0,1,1],
+				[0,0,1],
+				[1,1,1]],
+		"4" : [ [1,0,1],
+				[1,0,1],
+				[1,1,1],
+				[0,0,1],
+				[0,0,1]],
+		"5" : [ [1,1,1],
+				[1,0,0],
+				[1,1,1],
+				[0,0,1],
+				[1,1,1]],
+		"6" : [ [1,1,1],
+				[1,0,0],
+				[1,1,1],
+				[1,0,1],
+				[1,1,1]],
+		"7" : [ [1,1,1],
+				[0,0,1],
+				[0,0,1],
+				[0,0,1],
+				[0,0,1]],
+		"8" : [ [1,1,1],
+				[1,0,1],
+				[1,1,1],
+				[1,0,1],
+				[1,1,1]],
+		"9" : [ [1,1,1],
+				[1,0,1],
+				[1,1,1],
+				[0,0,1],
+				[1,1,1]],
+		":" : [ [0],
+				[1],
+				[0],
+				[1],
+				[0]],
+		" " : [ [0,0,0],
+				[0,0,0],
+				[0,0,0],
+				[0,0,0],
+				[0,0,0]],
+		}
+
+def bit_color_pattern(ofunc):
+	# empty image
+	image = []
+	for i in range(32):
+		column = []
+		for j in range(16):
+			column.append((0,0,0))
+		image.append(column)
+
+	xoff = 0
+	yoff = 0
+	colour = 0
+	while True:
+		xoff += 1
+		if xoff >= 32:
+			xoff = 0
+			yoff += 1
+			if yoff >= 16:
+				yoff = 0
+				colour += 1
+				if colour >= 3:
+					colour = 0
+
+		for i in range(32):
+			for j in range(16):
+				if j == yoff or i == xoff:
+					image[i][j] = (
+							0x3f if colour == 0 else 0,
+							0x3f if colour == 1 else 0,
+							0x3f if colour == 2 else 0,
+							)
+				else:
+					image[i][j] = (0, 0, 0)
+
+		ofunc(image)
+		# time.sleep(0.01)
+
+def line_pattern(ofunc):
+	patternlist = []
+
+	print("generating patterns")
+	xoff = 0
+	yoff = 1
+	colour = 0
+	while True:
+		image = []
+		for i in range(32):
+			column = []
+			for j in range(16):
+				if i % yoff == xoff or j % yoff == xoff:
+					column.append((
+							0x3f if colour == 0 else 0,
+							0x3f if colour == 1 else 0,
+							0x3f if colour == 2 else 0,
+							))
+				else:
+					column.append((0, 0, 0))
+			image.append(column)
+		patternlist.append(image)
+
+		xoff += 1
+		if xoff >= yoff:
+			xoff = 0
+			yoff += 1
+			if yoff >= 16:
+				yoff = 1
+				colour += 1
+				if colour >= 3:
+					colour = 0
+					break
+
+	print("looping patterns")
+	while True:
+		for i in patternlist:
+			ofunc(i)
+			time.sleep(0.1)
+
+def rainbow(ofunc):
+	patternlist = []
+
+	print("generating patterns")
+	xoff = 0
+	yoff = 0
+	colour = 0
+	while True:
+		image = []
+		xsteps = int((xoff / 32))
+		for i in range(32):
+			column = []
+			for j in range(16):
+				column.append((
+						(xsteps * i) if colour == 0 else 0,
+						(xsteps * i) if colour == 1 else 0,
+						(xsteps * i) if colour == 2 else 0,
+						))
+			image.append(column)
+		patternlist.append(image)
+
+		xoff += 1
+		if xoff >= 256:
+			xoff = 0
+			colour += 1
+			if colour >= 3:
+				colour = 0
+				break
+
+	print("looping patterns")
+	while True:
+		for i in patternlist:
+			ofunc(i)
+			time.sleep(2)
+
+def rainbowbroken(ofunc):
+	patternlist = []
+
+	print("generating patterns")
+	xoff = 0
+	yoff = 0
+	colour = 0
+	while True:
+		image = []
+		xsteps = int((xoff / 32))
+		for i in range(32):
+			column = []
+			for j in range(16):
+				column.append((
+						(xsteps * i) if colour == 0 else 0,
+						(xsteps * i) if colour == 1 else 0,
+						(xsteps * i) if colour == 2 else 0,
+						))
+			image.append(column)
+		patternlist.append(image)
+
+		xoff += 1
+		if xoff >= 256:
+			xoff = 0
+			colour += 1
+			if colour >= 3:
+				colour = 0
+				break
+
+	print("looping patterns")
+	while True:
+		ofunc(patternlist[40])
+		time.sleep(1)
+
+def single_color(ofunc, color):
+	image = []
+
+	print("generating patterns")
+	for i in range(32):
+		column = []
+		for j in range(16):
+			column.append(color)
+		image.append(column)
+
+	print("looping patterns")
+	# while True:
+	ofunc(image)
+	# time.sleep(1)
+
+def text_pattern(ofunc):
+	patterns = []
+
+	test = datetime.datetime.now().strftime("%H:%M:%S")
+	for i in range(2):
+		xoff = 2
+		yoff = 8 - int((5 / 2))
+		colour = (0x3f, 0, 0)
+
+		image = []
+		for i in range(32):
+			column = []
+			for j in range(16):
+				column.append((0,0,0))
+			image.append(column)
+
+		for i in test:
+			char = font_smallest[i]
+			for x in range(len(char[0])):
+				for y in range(len(char)):
+					r = min(255, char[y][x] * colour[0])
+					g = min(255, char[y][x] * colour[1])
+					b = min(255, char[y][x] * colour[2])
+					# print("%d, %d" % (x + xoff, y + yoff))
+					if not ((x + xoff) >= 32 or (y + yoff) >= 16):
+						image[x + xoff][y + yoff] = (r, g, b)
+			xoff += len(char[0]) + 1 # pad 1 pixel between
+		test = test[::-1]
+
+		patterns.append(image)
+
+	while True:
+		for i in patterns:
+			ofunc(i)
+			time.sleep(0.1)
+
+def clock_output(ofunc):
+	# empty image
+	image = []
+	for i in range(32):
+		column = []
+		for j in range(16):
+			column.append((0,0,0))
+		image.append(column)
+
+	colourbreathing = 0
+	oldtest = ""
+	while True:
+		test = datetime.datetime.now().strftime("%H:%M:%S")
+		if test != oldtest:
+			print(test)
+			xoff = 2
+			yoff = 8 - int((5 / 2))
+			colour = (colourbreathing, 0, 0)
+			for i in test:
+				char = font_smallest[i]
+				for x in range(len(char[0])):
+					for y in range(len(char)):
+						r = min(255, char[y][x] * colour[0])
+						g = min(255, char[y][x] * colour[1])
+						b = min(255, char[y][x] * colour[2])
+						# print("%d, %d" % (x + xoff, y + yoff))
+						if not ((x + xoff) >= 32 or (y + yoff) >= 16):
+							image[x + xoff][y + yoff] = (r, g, b)
+				xoff += len(char[0]) + 1 # pad 1 pixel between
+
+			colourbreathing += 4
+			if colourbreathing == 256:
+				colourbreathing = 0
+		oldtest = test
+
+		ofunc(image)
+		time.sleep(0.1)
 
 
 if __name__ == "__main__":
@@ -231,64 +495,59 @@ if __name__ == "__main__":
 	spi.open(1, 0)
 	spi.mode = 0
 	# spi.max_speed_hz = 6000000
-	spi.max_speed_hz = 3000000
+	# spi.max_speed_hz = 4000000
+	# spi.max_speed_hz = 3000000
+	spi.max_speed_hz = 2000000
+	# spi.max_speed_hz = 1000000
+	# spi.max_speed_hz = 500000
 	# spi.max_speed_hz = 1000000
 	# spi.max_speed_hz = 10000
+	print("running bus at %f MHz" % (spi.max_speed_hz / 1000 / 1000))
 
-	def write_frame(frame):
+	def write_frame(frame, segs = 2):
+		stime = datetime.datetime.now()
+
+		total = 0
+		errors = 0
 		for i in range(8):
-			out = [0xf0]
+			out = [0xf0 + i]
 			for j in range(32):
-				out.append(frame[j][i][0])
-				out.append(frame[j][i][1])
-				out.append(frame[j][i][2])
+				for z in range(segs)[::-1]:
+					for c in range(3)[::-1]:
+						out.append(frame[j][i + (8 * z)][c])
 			r = spi.xfer2(out)
+			# check for errors
+			for i in range(len(out) - 1): # last byte is on another cycle
+				if r[i + 1] != out[i]:
+					errors += 1
+
+			total += len(out)
 
 		out = [0x10]
 		r = spi.xfer2(out)
+		total += len(out)
 
-	test = "12:34"
+		etime = datetime.datetime.now()
+		mbits = ((total * 8) / 1000 / 1000) / (etime - stime).total_seconds()
+		framerate = (1 / (etime - stime).total_seconds())
+		print("transfered %d bytes. %f mbit/s, %f (errors %d)" % (total, mbits, framerate, errors))
 
-	while True:
-		test = datetime.datetime.now().strftime("%H:%M:%S")
-		# print(repr(test))
-		# print(len(test))
-		# print(repr(test))
-		char = 0
-		colour = (0x3f, 0, 0)
-		for i in test:
-			for x in range(4):
-				for y in range(5):
-					r = min(255, font_small[i][y][x] * colour[0])
-					g = min(255, font_small[i][y][x] * colour[1])
-					b = min(255, font_small[i][y][x] * colour[2])
-					image[x + (char * 4)][y + (0)] = (r, g, b)
-			char += 1
-
-		write_frame(image)
-		time.sleep(0.1)
-
-	# set_pixel = 0
-	# rgb = 0
-	# while True:
-		# write_frame(image)
-
-		# time.sleep(0.01)
-		# set_pixel += 1
-		# if set_pixel >= (32 * 8):
-			# set_pixel = 0
-			# rgb += 1
-			# if rgb >= 3:
-				# rgb = 0
-
-		# for i in range(8):
-			# for j in range(32):
-				# if rgb == 0:
-					# image[j][i] = (255, 0, 0) if (i * 32 + j) == set_pixel else (0, 0, 0)
-				# elif rgb == 1:
-					# image[j][i] = (0, 255, 0) if (i * 32 + j) == set_pixel else (0, 0, 0)
-				# elif rgb == 2:
-					# image[j][i] = (0, 0, 255) if (i * 32 + j) == set_pixel else (0, 0, 0)
+	# bit_color_pattern(write_frame)
+	# line_pattern(write_frame)
+	# rainbow(write_frame)
+	# rainbowbroken(write_frame)
+	v = 22
+	v = 0x3f
+	for v in [0x3f, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x30, 0x00, 0x00, 22, 0x00]:
+		single_color(write_frame, (v, 0, 0))
+		time.sleep(1)
+	# single_color(write_frame, (0, v, 0))
+	# time.sleep(3)
+	# single_color(write_frame, (0, 0, v))
+	# time.sleep(3)
+	# single_color(write_frame, (v, v, v))
+	# text_pattern(write_frame)
+	# clock_output(write_frame)
 
 	spi.close()
 
