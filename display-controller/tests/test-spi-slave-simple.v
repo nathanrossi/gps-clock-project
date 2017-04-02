@@ -73,19 +73,12 @@ module test_spi_slave_simple;
 				@(negedge clk); @(negedge clk); sclk = 0;
 			end
 
-			@(posedge clk);
 			// on the clock after sclk is risen for the 8th bit a byte is valid
 			`assert_eq(valid, 1);
 			$display("got %h, expected %h", data, test_data[7:0]);
 			`assert_eq(data, test_data[7:0]);
 			if (i != 0)
 				`assert_eq(read_data, i - 1);
-
-			// interword delay, to introduce some sort of timing error
-			@(posedge clk);
-			@(posedge clk);
-			@(posedge clk);
-			@(posedge clk);
 		end
 
 		@(negedge clk);
@@ -108,7 +101,6 @@ module test_spi_slave_simple;
 				@(negedge clk); @(negedge clk); sclk = 0;
 			end
 
-			@(posedge clk);
 			// on the clock after sclk is risen for the 8th bit a byte is valid
 			`assert_eq(valid, 1);
 			$display("got %h, expected %h", data, test_data[7:0]);
@@ -118,11 +110,8 @@ module test_spi_slave_simple;
 				`assert_eq(read_data, i - 1);
 
 			// interword delay, to introduce some sort of timing error
-			for (j = 0; j < 128; j = j + 1) begin
-				@(posedge clk);
-				@(posedge clk);
-				@(posedge clk);
-				@(posedge clk);
+			for (j = 0; j < 512; j = j + 1) begin
+				@(negedge clk);
 			end
 		end
 
