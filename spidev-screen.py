@@ -347,7 +347,7 @@ def rainbow(ofunc):
 			image.append(column)
 		patternlist.append(image)
 
-		xoff += 1
+		xoff += 2
 		if xoff >= 256:
 			xoff = 0
 			colour += 1
@@ -359,12 +359,14 @@ def rainbow(ofunc):
 	while True:
 		for i in patternlist:
 			ofunc(i)
-			time.sleep(2)
+			# print(patternlist.index(i))
+			# time.sleep(2)
 
 def rainbowbroken(ofunc):
 	patternlist = []
 
 	print("generating patterns")
+	m = 255
 	xoff = 0
 	yoff = 0
 	colour = 0
@@ -382,18 +384,20 @@ def rainbowbroken(ofunc):
 			image.append(column)
 		patternlist.append(image)
 
-		xoff += 1
+		xoff += 2
 		if xoff >= 256:
+			m = len(patternlist) - 1
+			break
 			xoff = 0
 			colour += 1
 			if colour >= 3:
 				colour = 0
+				m = len(patternlist) - 1
 				break
 
 	print("looping patterns")
 	while True:
-		ofunc(patternlist[40])
-		time.sleep(1)
+		ofunc(patternlist[m])
 
 def single_color(ofunc, color):
 	image = []
@@ -463,7 +467,7 @@ def clock_output(ofunc):
 			print(test)
 			xoff = 2
 			yoff = 8 - int((5 / 2))
-			colour = (colourbreathing, 0, 0)
+			colour = (0, 0x5f, 0)
 			for i in test:
 				char = font_smallest[i]
 				for x in range(len(char[0])):
@@ -476,9 +480,9 @@ def clock_output(ofunc):
 							image[x + xoff][y + yoff] = (r, g, b)
 				xoff += len(char[0]) + 1 # pad 1 pixel between
 
-			colourbreathing += 4
-			if colourbreathing == 256:
-				colourbreathing = 0
+			# colourbreathing += 4
+			# if colourbreathing == 256:
+				# colourbreathing = 0
 		oldtest = test
 
 		ofunc(image)
@@ -500,7 +504,6 @@ if __name__ == "__main__":
 	spi.max_speed_hz = 2000000
 	# spi.max_speed_hz = 1000000
 	# spi.max_speed_hz = 500000
-	# spi.max_speed_hz = 1000000
 	# spi.max_speed_hz = 10000
 	print("running bus at %f MHz" % (spi.max_speed_hz / 1000 / 1000))
 
@@ -509,16 +512,17 @@ if __name__ == "__main__":
 
 		total = 0
 		errors = 0
-		for i in range(8):
-			out = [0xf0 + i]
+		for i in range(9):
+			out = [0xf0 + (i & 0xf)]
+			m = i % 8 # handle row 0 twice
 			for j in range(32):
 				for z in range(segs)[::-1]:
 					for c in range(3)[::-1]:
-						out.append(frame[j][i + (8 * z)][c])
+						out.append(frame[j][m + (8 * z)][c])
 			r = spi.xfer2(out)
 			# check for errors
-			for i in range(len(out) - 1): # last byte is on another cycle
-				if r[i + 1] != out[i]:
+			for t in range(len(out) - 1): # last byte is on another cycle
+				if r[t + 1] != out[t]:
 					errors += 1
 
 			total += len(out)
@@ -530,24 +534,24 @@ if __name__ == "__main__":
 		etime = datetime.datetime.now()
 		mbits = ((total * 8) / 1000 / 1000) / (etime - stime).total_seconds()
 		framerate = (1 / (etime - stime).total_seconds())
-		print("transfered %d bytes. %f mbit/s, %f (errors %d)" % (total, mbits, framerate, errors))
+		print("transfered %d bytes. %f mbit/s, %f Hz vert (errors %d)" % (total, mbits, framerate, errors))
 
 	# bit_color_pattern(write_frame)
 	# line_pattern(write_frame)
 	# rainbow(write_frame)
 	# rainbowbroken(write_frame)
-	v = 22
-	v = 0x3f
-	for v in [0x3f, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x30, 0x00, 0x00, 22, 0x00]:
-		single_color(write_frame, (v, 0, 0))
-		time.sleep(1)
+	# while True:
+		# for v in [0x3f, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x30, 0x00, 0x00, 22, 0x00]:
+			# for i in range(10):
+				# single_color(write_frame, (v, 0, 0))
+			# time.sleep(0.2)
 	# single_color(write_frame, (0, v, 0))
 	# time.sleep(3)
 	# single_color(write_frame, (0, 0, v))
 	# time.sleep(3)
 	# single_color(write_frame, (v, v, v))
 	# text_pattern(write_frame)
-	# clock_output(write_frame)
+	clock_output(write_frame)
 
 	spi.close()
 
