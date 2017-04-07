@@ -1,23 +1,26 @@
 #!/bin/bash
 
+# load if not already loaded
+modprobe libcomposite
+
 cd /sys/kernel/config/usb_gadget/
 mkdir -p debugif
 cd debugif
 
 # Setup the usb descriptors
-echo 0x1d6b > idVendor # Linux Foundation
-echo 0x0104 > idProduct # Multifunction Composite Gadget
-echo 0x0100 > bcdDevice # v1.0.0
-echo 0x0200 > bcdUSB # USB 2.0
+echo -n 0x1d6b > idVendor # Linux Foundation
+echo -n 0x0104 > idProduct # Multifunction Composite Gadget
+echo -n 0x0100 > bcdDevice # v1.0.0
+echo -n 0x0200 > bcdUSB # USB 2.0
 
 mkdir -p strings/0x409
-echo "fedcba9876543210" > strings/0x409/serialnumber
-echo "Nathan Rossi" > strings/0x409/manufacturer
-echo "RaspberryPi Zero" > strings/0x409/product
+echo -n "fedcba9876543210" > strings/0x409/serialnumber
+echo -n "Nathan Rossi" > strings/0x409/manufacturer
+echo -n "RaspberryPi Zero" > strings/0x409/product
 
 mkdir -p configs/c.1/strings/0x409
-echo "Config 1: ECM Network" > configs/c.1/strings/0x409/configuration
-echo 250 > configs/c.1/MaxPower
+echo -n "Config 1: ECM Network" > configs/c.1/strings/0x409/configuration
+echo -n 250 > configs/c.1/MaxPower
 
 # gadget functions
 

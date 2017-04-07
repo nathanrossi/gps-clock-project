@@ -5,6 +5,15 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384
 
 RDEPENDS_${PN} = "bash"
 
+# kernel modules used for configfs setup
+RRECOMMENDS_${PN} += " \
+		kernel-module-libcomposite \
+		kernel-module-usb-f-serial \
+		kernel-module-usb-u-ether \
+		kernel-module-usb-f-acm \
+		kernel-module-usb-f-ecm \
+		"
+
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI = " \
 		file://usb-gadget-debugif.sh \
@@ -14,7 +23,7 @@ SRC_URI = " \
 #inherit update-rc.d
 
 #INITSCRIPT_NAME = "usb-gadget-debugif"
-#INITSCRIPT_PARAMS = "start 39 S . stop 39 0 6 1 ."
+#INITSCRIPT_PARAMS = "start 10 S . stop 10 0 6 1 ."
 
 inherit systemd
 
