@@ -23,11 +23,41 @@
 		/* 0x70 == P9.11 uart4_rx mode 6, 0x74 == P9.13 uart4_tx mode 6 */
 		pinctrl-single,pins = <0x070 0x26>, <0x074 0x06>;
 	};
+
+	bb_spi0_pins: pinmux_bb_spi0_pins {
+		/* 160 == P9.?? spi0_cs1 mode 0 */
+		pinctrl-single,pins =
+			<0x0150 0x30>, /* 150 == P9.22 spi0_sclk mode 0 (rx+tx), pullup */
+			<0x0154 0x30>, /* 154 == P9.21 spi0_d0   mode 0 (miso), pullup */
+			<0x0158 0x10>, /* 158 == P9.18 spi0_d1   mode 0 (mosi), pullup */
+			<0x015C 0x10>  /* 15C == P9.18 spi0_cs0  mode 0 (ss), pullup */
+			;
+			/*
+				6   - fast/slow slew rate (1 == slow)
+				5   - receiver active (1 == enable)
+				4   - pu or pd (1 == up)
+				3   - pu/d enable (0 == enable)
+				2-0 - mode
+			*/
+	};
 };
 
 &uart4 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&bb_uart4_pins>;
+};
+
+&spi0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&bb_spi0_pins>;
+	spidev@0 {
+		spi-max-frequency = <24000000>;
+		reg = <0>;
+		compatible = "linux,spidev";
+	};
 };
 
