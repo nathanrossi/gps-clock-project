@@ -9,7 +9,6 @@ IMAGE_INSTALL = " \
 		python3-spidev \
 		i2c-tools \
 		usbutils \
-		device-tree \
 		"
 
 # debugging tools/modules/stuff
