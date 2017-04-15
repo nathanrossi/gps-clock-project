@@ -1,0 +1,60 @@
+/dts-v1/;
+
+/* include the base rpi-zero dts and add configuration for USB/SPI */
+#include "bcm2835-rpi-zero.dts"
+
+/ {
+	chosen {
+		bootargs = "earlyprintk console=ttyAMA0 root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait";
+	};
+};
+
+&gpio {
+	pinctrl-0 = <&gpioout>;
+
+	spi0_pins: spi0_pins {
+		brcm,pins = <9 10 11>;
+		brcm,function = <4>; /* alt0 */
+	};
+
+	spi0_cs_pins: spi0_cs_pins {
+		brcm,pins = <8 7>;
+		brcm,function = <1>; /* output */
+	};
+};
+
+&usb {
+	status = "okay";
+	/*dr_mode = "otg";*/
+	dr_mode = "peripheral"; /* force into device mode */
+	g-np-tx-fifo-size = <32>;
+	g-rx-fifo-size = <256>;
+	/*g-tx-fifo-size = <512 512 512 512 512 768>;*/
+	g-tx-fifo-size = <256 128 128 64 64 64 32>;
+};
+
+/* spi == spi0 */
+&spi {
+	pinctrl-names = "default";
+	/*pinctrl-0 = <&spi0_gpio7>;*/
+	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+	status = "okay";
+
+	spidev0: spidev@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "spidev";
+		reg = <0>; /* CE0 */
+		spi-max-frequency = <500000>;
+	};
+
+	spidev1: spidev@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "spidev";
+		reg = <1>; /* CE1 */
+		spi-max-frequency = <500000>;
+	};
+};
+
