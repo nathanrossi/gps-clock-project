@@ -14,6 +14,7 @@ echo-pf-check = ; STATUS=$$?; \
 		else \
 			$(call echo-fail,$(1),$(2)); \
 		fi
+echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
@@ -21,24 +22,28 @@ ARACHNEPNR = $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
 ICEBOX = $(BASEPROGS)/icestorm/icebox
 ICEPACK = $(BASEPROGS)/icestorm/icepack/icepack
 ICETIME = $(BASEPROGS)/icestorm/icetime/icetime
+ICEPLL = $(BASEPROGS)/icestorm/icepll/icepll
 IVERILOG = iverilog
 VVP = vvp
 
 all: bitstream tests
 
-BROKEN =
+TESTS_BROKEN =
+TESTS_SKIP = test-top test-top-load-spi
 TESTS = $(patsubst tests/%.v,%,$(shell ls tests/test-*.v))
-RUNTESTS = $(filter-out $(BROKEN),$(patsubst tests/%.v,%,$(TESTS)))
+RUNTESTS = $(filter-out $(TESTS_BROKEN) $(TESTS_SKIP),$(patsubst tests/%.v,%,$(TESTS)))
 
 tests: $(RUNTESTS)
 
-$(foreach t,$(TESTS),$(eval $t: obj/tests/$t_run))
+$(foreach t,$(TESTS),$(eval $t: obj/tests/$t.run.log))
 
 bit: bitstream
-bitstream: obj/top.bin obj/top.asc
+bitstream: obj/top.bin obj/top.asc obj/top.asc.timing.log
 
 clean:
-	$(call cmd-call,rm -rf *.vcd obj/,CLEAN,cleaning...)
+	$(call echo-info,CLEAN,cleaning...)
+	-@rm -rf obj/
+
 
 .PHONY: all clean tests bit bitstream $(TESTS)
 
@@ -65,35 +70,66 @@ obj/tests/test-spi-controller-segments.vvp: spi-controller.v spi-slave.v
 obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 obj/tests/test-top-load-spi.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
 
+obj/tests/%.vvp: TEST_NAME = $(patsubst obj/tests/%.vvp,%,$@)
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(call safe-dir)
-	$(call echo-info,SIM,$(patsubst obj/tests/%.vvp,%,$@))
+	$(call echo-info,SIM,$(TEST_NAME))
 	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^)
 
-obj/tests/%_run: INFO_NAME = TEST
-obj/tests/%_run: obj/tests/%.vvp
+obj/tests/%.run.log: TEST_NAME = $(patsubst obj/tests/%.run.log,%,$@)
+obj/tests/%.run.log: obj/tests/%.vvp
 	$(call safe-dir)
-	$(call echo-info,$(INFO_NAME),$(patsubst obj/tests/%_run,%,$@))
-	$(Q)$(VVP) -n $^ -lxt2 $(QSH) $(call echo-pf-check,$(INFO_NAME),$(patsubst obj/tests/%_run,%,$@))
+	$(call echo-info,TEST,$(TEST_NAME))
+	$(Q)$(VVP) -n $^ -lxt2  2>&1 > $@ $(call echo-pf-check,TEST,$(TEST_NAME))
 
 #
 # Bistream/Synth/etc.
 #
 
-obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
+# frequencies for the top level design (in MHz)
+SOURCE_FREQ = 12
+TARGET_FREQ = 48
+TARGET_DEVICE = 1k
+TARGET_DEVICE_VARIANT = hx
+TARGET_PACKAGE = tq144
+
+obj/top-pll-config.v:
+	$(call safe-dir)
+	$(call echo-info,PLL,$@)
+	$(Q)$(ICEPLL) -i $(SOURCE_FREQ) -o $(TARGET_FREQ) -m -f $@ > $@.log
+	$(call echo-report,PLL Configuration for $@,$@.log) $(QSH)
+
+obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v obj/top-pll-config.v
 
 # synth, pnr, bitmap
 obj/%.blif: %.v
 	$(call safe-dir)
 	$(call echo-info,SYNTH,$@)
-	$(Q)$(YOSYS) -p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" $(QSH)
+	$(Q)$(YOSYS) \
+		-p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" \
+			2>&1 > $@.synthesis.log
 
 obj/%.asc: obj/%.blif %.pcf
 	$(call safe-dir)
 	$(call echo-info,P-N-R,$@)
-	$(Q)$(ARACHNEPNR) -d 1k -P tq144 -o $@ -p $(firstword $(filter %.pcf,$^)) $(firstword $(filter %.blif,$^)) $(QSH)
+	$(Q)$(ARACHNEPNR) \
+		-d $(TARGET_DEVICE) \
+		-P $(TARGET_PACKAGE) \
+		-o $@ \
+		-p $(firstword $(filter %.pcf,$^)) \
+		$(firstword $(filter %.blif,$^)) $(QSH)
+
+obj/%.asc.timing.log: obj/%.asc %.pcf
+	$(call safe-dir)
 	$(call echo-info,TIMING,$@)
-	$(Q)$(ICETIME) -C $(ICEBOX)/chipdb-1k.txt -d hx1k -P tq144 -p $(firstword $(filter %.pcf,$^)) -c 12 $@ $(QSH)
+	$(Q)$(ICETIME) \
+		-C $(ICEBOX)/chipdb-$(TARGET_DEVICE).txt \
+		-d $(TARGET_DEVICE_VARIANT)$(TARGET_DEVICE) \
+		-P $(TARGET_PACKAGE) \
+		-p $(firstword $(filter %.pcf,$^)) \
+		-c $(TARGET_FREQ) $(firstword $(filter %.asc,$^)) \
+			2>&1 > $@ $(call echo-pf-check,TIMING,$@)
+	$(call echo-report,Timing Report for $@,$@) $(QSH)
 
 obj/%.bin: obj/%.asc
 	$(call safe-dir)
