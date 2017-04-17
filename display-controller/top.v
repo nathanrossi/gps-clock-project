@@ -4,8 +4,15 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	reg rst = 0;
 
 	output reg [7:0] debug = 0;
-
 	output reg [4:0] leds = 5'b10000;
+
+	// PLL clock outputs
+	wire pll_locked;
+	wire pll_clk;
+
+	// internal clk
+	wire sysclk;
+	assign sysclk = pll_clk;
 
 	// display parameters
 	parameter integer segments = 2;
@@ -32,7 +39,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 
 	// outputs to display
 	output wire oe, lat, oclk;
-	output wire [2:0] a;
+	output wire [2:0] a; // TODO: always handle 4 bit addressing
 	output wire [5:0] rgb;
 	assign oe = ~internal_oe;
 	assign a = row[2:0];
@@ -44,7 +51,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	wire spi_ss_neg = ~spi_ss;
 
 	// handle memory flip during frame complete
-	always @(posedge clk) begin
+	always @(posedge sysclk) begin
 		if (frame_complete && (ready == 0)) begin
 			// was not ready, thus must have a frame loaded, so lets flip it
 			// in. And because we have flipped it in, we are ready to accept
@@ -64,7 +71,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.bitwidth(bitdepth),
 		.cyclewidth(8)
 	) u_driver (
-		.clk(clk),
+		.clk(sysclk),
 		.rst(rst),
 		.row(row),
 		.column(column),
@@ -82,7 +89,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.columns(columns),
 		.width(bitdepth * 3)
 	) u_memory (
-		.clk(clk),
+		.clk(sysclk),
 		.flip(mem_flip),
 		.wen(wen),
 		.wrow(wrow),
@@ -99,7 +106,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.columns(columns),
 		.bitwidth(bitdepth)
 	) u_loader (
-		.clk(clk),
+		.clk(sysclk),
 		.rst(rst),
 		.sclk(spi_sclk),
 		.ss(spi_ss_neg),
@@ -112,6 +119,18 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.ready(ready),
 		.loaded(loaded)
 	);
+
+	`ifdef SYNTHESIS
+		pll u_pll (
+			.locked(pll_locked),
+			.clock_in(clk),
+			.clock_out(pll_clk),
+		);
+	`else
+		// in simulation, skip the PLL
+		assign pll_clk = clk;
+		assign pll_locked = 1'b1;
+	`endif
 
 endmodule
 
