@@ -58,7 +58,7 @@ gamma-lookup-tables: $(foreach t,$(GAMMA_TABLES),obj/gamma-lookup-table-$t.hex)
 obj/gamma-lookup-table-%.hex: BITS = $(patsubst obj/gamma-lookup-table-%.hex,%,$@)
 obj/gamma-lookup-table-%.hex: scripts/gamma-correction-tables.py
 	$(call safe-dir)
-	$(call echo-info,MEM,generating gamma correction table for $(BITS) bits)
+	$(call echo-info,GLUT,generating gamma correction table for $(BITS) bits)
 	$(Q)./scripts/gamma-correction-tables.py $(BITS) > $@
 
 #
@@ -80,14 +80,13 @@ obj/tests/test-top-load-spi.vvp: top.v display-memory.v display-driver.v display
 obj/tests/%.vvp: TEST_NAME = $(patsubst obj/tests/%.vvp,%,$@)
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(call safe-dir)
-	$(call echo-info,SIM,$(TEST_NAME))
+	$(call echo-info,SIMU,$(TEST_NAME))
 #	$(Q)$(IVERILOG) -E -D SIMULATION -g2012 -o $@.pp $(filter-out tests/helpers.v,$^)
 	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^)
 
 obj/tests/%.run.log: TEST_NAME = $(patsubst obj/tests/%.run.log,%,$@)
 obj/tests/%.run.log: obj/tests/%.vvp
 	$(call safe-dir)
-	$(call echo-info,TEST,$(TEST_NAME))
 	$(Q)$(VVP) -n $^ -lxt2  2>&1 > $@ $(call echo-pf-check,TEST,$(TEST_NAME))
 	$(call echo-report-test-assert,$@,$@) $(QSH)
 
