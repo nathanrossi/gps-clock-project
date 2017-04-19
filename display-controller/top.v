@@ -69,7 +69,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.rows(rows),
 		.columns(columns),
 		.bitwidth(bitdepth),
-		.cyclewidth(8)
+		.cyclewidth(10)
 	) u_driver (
 		.clk(sysclk),
 		.rst(rst),
