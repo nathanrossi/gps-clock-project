@@ -5,10 +5,11 @@ module test_display_color_encoder_simple;
 	reg clk = 0;
 	reg [47:0] pixel;
 	reg [47:0] cpixel;
-	wire [5:0] rgb;
 
 	display_color_encoder #(
-		.segments(2)
+		.segments(2),
+		.bitwidth(8),
+		.cyclewidth(8)
 	) u_encoder (
 		.clk(clk),
 		.pixel(pixel),
