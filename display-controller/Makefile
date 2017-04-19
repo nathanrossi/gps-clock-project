@@ -15,6 +15,7 @@ echo-pf-check = ; STATUS=$$?; \
 			$(call echo-fail,$(1),$(2)); \
 		fi
 echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
+echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | grep assertion; echo '-------------------- $(1) --------------------'"
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
@@ -61,9 +62,11 @@ obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
 #
 
 obj/tests/test-display-driver-simple.vvp: display-driver.v display-color-encoder.v
+obj/tests/test-display-driver-10b.vvp: display-driver.v display-color-encoder.v
 obj/tests/test-display-driver-timing.vvp: display-driver.v display-color-encoder.v
 obj/tests/test-display-memory-simple.vvp: display-memory.v
 obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
+obj/tests/test-display-color-encoder-10b.vvp: display-color-encoder.v
 obj/tests/test-spi-slave-simple.vvp: spi-slave.v
 obj/tests/test-spi-controller.vvp: spi-controller.v spi-slave.v
 obj/tests/test-spi-controller-segments.vvp: spi-controller.v spi-slave.v
@@ -74,6 +77,7 @@ obj/tests/%.vvp: TEST_NAME = $(patsubst obj/tests/%.vvp,%,$@)
 obj/tests/%.vvp: tests/%.v tests/helpers.v
 	$(call safe-dir)
 	$(call echo-info,SIM,$(TEST_NAME))
+#	$(Q)$(IVERILOG) -E -D SIMULATION -g2012 -o $@.pp $(filter-out tests/helpers.v,$^)
 	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^)
 
 obj/tests/%.run.log: TEST_NAME = $(patsubst obj/tests/%.run.log,%,$@)
@@ -81,6 +85,7 @@ obj/tests/%.run.log: obj/tests/%.vvp
 	$(call safe-dir)
 	$(call echo-info,TEST,$(TEST_NAME))
 	$(Q)$(VVP) -n $^ -lxt2  2>&1 > $@ $(call echo-pf-check,TEST,$(TEST_NAME))
+	$(call echo-report-test-assert,$@,$@) $(QSH)
 
 #
 # Bistream/Synth/etc.
@@ -88,7 +93,7 @@ obj/tests/%.run.log: obj/tests/%.vvp
 
 # frequencies for the top level design (in MHz)
 SOURCE_FREQ = 12
-TARGET_FREQ = 48
+TARGET_FREQ = 24
 TARGET_DEVICE = 1k
 TARGET_DEVICE_VARIANT = hx
 TARGET_PACKAGE = tq144
