@@ -87,7 +87,7 @@ obj/tests/%.vvp: tests/%.v tests/helpers.v
 obj/tests/%.run.log: TEST_NAME = $(patsubst obj/tests/%.run.log,%,$@)
 obj/tests/%.run.log: obj/tests/%.vvp
 	$(call safe-dir)
-	$(Q)$(VVP) -n $^ -lxt2  2>&1 > $@ $(call echo-pf-check,TEST,$(TEST_NAME))
+	$(Q)$(VVP) -n $^ -lxt2 > $@ 2>&1 $(call echo-pf-check,TEST,$(TEST_NAME))
 	$(call echo-report-test-assert,$@,$@) $(QSH)
 
 #
@@ -115,7 +115,7 @@ obj/%.blif: %.v
 	$(call echo-info,SYNTH,$@)
 	$(Q)$(YOSYS) \
 		-p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" \
-			2>&1 > $@.synthesis.log
+			> $@.synthesis.log 2>&1
 
 obj/%.asc: obj/%.blif %.pcf
 	$(call safe-dir)
@@ -125,7 +125,9 @@ obj/%.asc: obj/%.blif %.pcf
 		-P $(TARGET_PACKAGE) \
 		-o $@ \
 		-p $(firstword $(filter %.pcf,$^)) \
-		$(firstword $(filter %.blif,$^)) $(QSH)
+		$(firstword $(filter %.blif,$^)) \
+		> $@.log 2>&1
+	$(call echo-report,Place and Route report for $@,$@.log) $(QSH)
 
 obj/%.asc.timing.log: obj/%.asc %.pcf
 	$(call safe-dir)
@@ -136,7 +138,7 @@ obj/%.asc.timing.log: obj/%.asc %.pcf
 		-P $(TARGET_PACKAGE) \
 		-p $(firstword $(filter %.pcf,$^)) \
 		-c $(TARGET_FREQ) $(firstword $(filter %.asc,$^)) \
-			2>&1 > $@ $(call echo-pf-check,TIMING,$@)
+			> $@ 2>&1 $(call echo-pf-check,TIMING,$@)
 	$(call echo-report,Timing Report for $@,$@) $(QSH)
 
 obj/%.bin: obj/%.asc
