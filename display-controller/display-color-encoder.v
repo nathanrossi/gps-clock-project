@@ -31,18 +31,11 @@ module display_color_encoder (clk, pixel, cpixel);
 		for (g = 0; g < segments * 3; g = g + 1) begin
 			reg [cyclewidth - 1:0] gamma_lookup_data [0:(2 ** bitwidth) - 1];
 			initial begin
-				// Pick one of the pre-calculated gamma tables, (verilog
-				// doesn't really have a way to convert a decimal to string)
-				if (cyclewidth == 8)
-					$readmemh("obj/gamma-lookup-table-8.hex", gamma_lookup_data);
-				else if (cyclewidth == 9)
-					$readmemh("obj/gamma-lookup-table-9.hex", gamma_lookup_data);
-				else if (cyclewidth == 10)
-					$readmemh("obj/gamma-lookup-table-10.hex", gamma_lookup_data);
-				else if (cyclewidth == 11)
-					$readmemh("obj/gamma-lookup-table-11.hex", gamma_lookup_data);
-				else if (cyclewidth == 12)
-					$readmemh("obj/gamma-lookup-table-12.hex", gamma_lookup_data);
+				// TODO: fix this somehow, it seems there is some sort of
+				// issue/limitation with yosys and "non-constant"
+				// initialization of memory. It also seems to wipe out brams
+				// that are not used fully
+				$readmemh("obj/gamma-lookup-table-10.hex", gamma_lookup_data);
 
 				`ifndef SYNTHESIS
 				if (g == 0) begin
