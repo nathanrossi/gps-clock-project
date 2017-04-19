@@ -54,10 +54,8 @@ module display_color_encoder (clk, pixel, cpixel);
 				`endif
 			end
 
-			integer z;
 			always @(posedge clk) begin
-				z = g * bitwidth;
-				cpixel[z +:cyclewidth] <= gamma_lookup_data[pixel[z +:bitwidth]];
+				cpixel[(g * cyclewidth) +:cyclewidth] <= gamma_lookup_data[pixel[(g * bitwidth) +:bitwidth]];
 			end
 		end
 	endgenerate
