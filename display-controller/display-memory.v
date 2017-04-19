@@ -15,7 +15,7 @@ module display_memory(clk, flip, wen, wrow, wcol, rrow, rcol, wdata, rdata);
 	integer ik;
 	initial begin
 		for (ik = 0; ik < (2 ** ($clog2(rows) + $clog2(columns) + 1)) - 1; ik = ik + 1) begin
-			memory[ik] = {(width * segments){1'b0}};
+			memory[ik] <= {(width * segments){1'b0}};
 		end
 	end
 
