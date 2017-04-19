@@ -15,7 +15,7 @@ echo-pf-check = ; STATUS=$$?; \
 			$(call echo-fail,$(1),$(2)); \
 		fi
 echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
-echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | grep assertion; echo '-------------------- $(1) --------------------'"
+echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | egrep assertion\|info; echo '-------------------- $(1) --------------------'"
 
 BASEPROGS = /home/nathan/fpga-ice40
 YOSYS = $(BASEPROGS)/yosys/yosys
@@ -96,7 +96,7 @@ obj/tests/%.run.log: obj/tests/%.vvp
 
 # frequencies for the top level design (in MHz)
 SOURCE_FREQ = 12
-TARGET_FREQ = 24
+TARGET_FREQ = 48
 TARGET_DEVICE = 1k
 TARGET_DEVICE_VARIANT = hx
 TARGET_PACKAGE = tq144

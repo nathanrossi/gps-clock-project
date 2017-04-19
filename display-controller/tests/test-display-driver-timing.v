@@ -30,7 +30,7 @@ module test_display_driver_timing;
 	);
 
 	// 5/5ns clock (10ns period)
-	parameter clkfreq = 40000000;
+	parameter clkfreq = 48000000;
 	parameter period = ((1 * 1000 * 1000 * 1000) / clkfreq);
 	always
 		# period clk = !clk;
@@ -62,7 +62,7 @@ module test_display_driver_timing;
 		rst = 0;
 
 		repeat (1) begin
-			$display("[%t] frame %d", $time, frame_count);
+			$display("[%t] info: frame %d", $time, frame_count);
 			while (mark_complete == 0) begin
 				@(posedge clk);
 				frame_cycles = frame_cycles + 1;
@@ -79,10 +79,13 @@ module test_display_driver_timing;
 					for (j = 0; j < 8; j = j + 1) begin
 						z = pixel_cycles[(j * 32)];
 						t = t + z;
-						$display("[%t] row     %3d = %d/%d, %d %%", $time, j, z, frame_cycles, (z * 100) / frame_cycles);
+						$display("[%t] info: row     %3d = %d/%d, %d %%", $time, j, z, frame_cycles, (z * 100) / frame_cycles);
 					end
-					$display("[%t] inter-frame = %d/%d, %d %%", $time, frame_cycles - t, frame_cycles, ((frame_cycles - t) * 100) / frame_cycles);
-					$display("[%t] frame takes %d cycles, vert %d hz (%d Hz clk)", $time, frame_cycles, (clkfreq / frame_cycles), clkfreq);
+					$display("[%t] info: inter-frame = %d/%d, %d %%", $time, frame_cycles - t, frame_cycles, ((frame_cycles - t) * 100) / frame_cycles);
+					$display("[%t] info: frame takes %d cycles, vert %d hz (%d Hz clk)", $time, frame_cycles, (clkfreq / frame_cycles), clkfreq);
+
+					// ensure persistence of vision is kept, this true for >60Hz
+					`assert_dge((clkfreq / frame_cycles), 60);
 
 					frame_cycles = 0;
 					for (j = 0; j < 8; j = j + 1) begin
