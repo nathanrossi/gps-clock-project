@@ -70,7 +70,7 @@ def srgb_decode(r, g, b):
 if __name__ == "__main__":
 	gamma = 2.2
 	inbits = 8
-	outbits = 8
+	outbits = int(sys.argv[1]) if len(sys.argv) >= 1 else 8
 	outbitshex = (1 if (outbits % 4) != 0 else 0) + (outbits / 4)
 
 	insize = (2 ** inbits) - 1

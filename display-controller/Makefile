@@ -48,14 +48,18 @@ clean:
 
 .PHONY: all clean tests bit bitstream $(TESTS)
 
-display-color-encoder.v: obj/gamma-lookup-table.hex
+display-color-encoder.v: gamma-lookup-tables
 display-driver.v: display-color-encoder.v
 top.v: display-driver.v display-memory.v spi-controller.v
 
-obj/gamma-lookup-table.hex: scripts/gamma-correction-tables.py
+GAMMA_TABLES = 8 9 10 11 12
+gamma-lookup-tables: $(foreach t,$(GAMMA_TABLES),obj/gamma-lookup-table-$t.hex)
+
+obj/gamma-lookup-table-%.hex: BITS = $(patsubst obj/gamma-lookup-table-%.hex,%,$@)
+obj/gamma-lookup-table-%.hex: scripts/gamma-correction-tables.py
 	$(call safe-dir)
-	$(call echo-info,MEM,generating gamma correction table)
-	$(Q)./scripts/gamma-correction-tables.py > $@
+	$(call echo-info,MEM,generating gamma correction table for $(BITS) bits)
+	$(Q)./scripts/gamma-correction-tables.py $(BITS) > $@
 
 #
 # Tests
