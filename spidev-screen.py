@@ -112,14 +112,14 @@ font = {
 				[0, 0, 0, 0, 0],
 				[0, 0, 0, 0, 0],
 				[0, 0, 0, 0, 0]],
-		":" : [ [0, 0, 0, 0, 0],
-				[0, 1, 1, 0, 0],
-				[0, 1, 1, 0, 0],
-				[0, 0, 0, 0, 0],
-				[0, 1, 1, 0, 0],
-				[0, 1, 1, 0, 0],
-				[0, 0, 0, 0, 0],
-				[0, 0, 0, 0, 0]],
+		":" : [ [0, 0, 0, 0],
+				[0, 1, 1, 0],
+				[0, 1, 1, 0],
+				[0, 0, 0, 0],
+				[0, 1, 1, 0],
+				[0, 1, 1, 0],
+				[0, 0, 0, 0],
+				[0, 0, 0, 0]],
 	}
 
 font_small = {
@@ -362,6 +362,23 @@ def rainbow(ofunc):
 			# print(patternlist.index(i))
 			# time.sleep(2)
 
+def simplerainbow(ofunc, c):
+	image = []
+	steps = 32
+	for i in range(32):
+		column = []
+		for j in range(16):
+			column.append((
+					int(c[0] * i / steps),
+					int(c[1] * i / steps),
+					int(c[2] * i / steps),
+					))
+		image.append(column)
+
+	print("looping patterns")
+	while True:
+		ofunc(image)
+
 def rainbowbroken(ofunc):
 	patternlist = []
 
@@ -462,14 +479,16 @@ def clock_output(ofunc):
 	colourbreathing = 0
 	oldtest = ""
 	while True:
-		test = datetime.datetime.now().strftime("%H:%M:%S")
+		# test = datetime.datetime.now().strftime("%H:%M:%S")
+		test = datetime.datetime.now().strftime("%H:%M")
 		if test != oldtest:
 			print(test)
 			xoff = 2
 			yoff = 8 - int((5 / 2))
-			colour = (0, 0x5f, 0)
+			colour = (0, 0x3f, 0)
 			for i in test:
-				char = font_smallest[i]
+				char = font[i]
+				# char = font_smallest[i]
 				for x in range(len(char[0])):
 					for y in range(len(char)):
 						r = min(255, char[y][x] * colour[0])
@@ -497,6 +516,7 @@ if __name__ == "__main__":
 
 	spi = spidev.SpiDev()
 	spi.open(1, 0)
+	# spi.open(32766, 0)
 	spi.mode = 0
 	# spi.max_speed_hz = 6000000
 	# spi.max_speed_hz = 4000000
@@ -539,13 +559,14 @@ if __name__ == "__main__":
 	# bit_color_pattern(write_frame)
 	# line_pattern(write_frame)
 	# rainbow(write_frame)
+	# simplerainbow(write_frame, (0xff, 0xff, 0xff))
 	# rainbowbroken(write_frame)
 	# while True:
 		# for v in [0x3f, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x30, 0x00, 0x00, 22, 0x00]:
 			# for i in range(10):
 				# single_color(write_frame, (v, 0, 0))
 			# time.sleep(0.2)
-	# single_color(write_frame, (0, v, 0))
+	# single_color(write_frame, (0, 0xff, 0))
 	# time.sleep(3)
 	# single_color(write_frame, (0, 0, v))
 	# time.sleep(3)
