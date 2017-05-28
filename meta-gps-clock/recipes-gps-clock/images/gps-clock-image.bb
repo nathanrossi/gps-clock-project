@@ -17,7 +17,10 @@ IMAGE_INSTALL += " \
 		util-linux e2fsprogs \
 		ethtool \
 		packagegroup-core-ssh-openssh \
+		cpufrequtils \
 		"
+
+IMAGE_INSTALL += "device-tree"
 
 # Limit python modules to those used?
 
