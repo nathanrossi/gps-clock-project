@@ -18,14 +18,14 @@ echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat
 echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | egrep assertion\|info; echo '-------------------- $(1) --------------------'"
 
 BASEPROGS = /home/nathan/fpga-ice40
-YOSYS = $(BASEPROGS)/yosys/yosys
-ARACHNEPNR = $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
-ICEBOX = $(BASEPROGS)/icestorm/icebox
-ICEPACK = $(BASEPROGS)/icestorm/icepack/icepack
-ICETIME = $(BASEPROGS)/icestorm/icetime/icetime
-ICEPLL = $(BASEPROGS)/icestorm/icepll/icepll
-IVERILOG = iverilog
-VVP = vvp
+YOSYS ?= $(BASEPROGS)/yosys/yosys
+ARACHNEPNR ?= $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
+ICEBOX ?= $(BASEPROGS)/icestorm/icebox
+ICEPACK ?= $(BASEPROGS)/icestorm/icepack/icepack
+ICETIME ?= $(BASEPROGS)/icestorm/icetime/icetime
+ICEPLL ?= $(BASEPROGS)/icestorm/icepll/icepll
+IVERILOG ?= iverilog
+VVP ?= vvp
 
 all: bitstream tests
 
