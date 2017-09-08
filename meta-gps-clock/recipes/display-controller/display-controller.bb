@@ -7,6 +7,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 inherit localsrc
 
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
 # build directory
 B = "${WORKDIR}/${BPN}"
 
@@ -24,4 +26,3 @@ do_deploy () {
 	install -Dm 0644 ${B}/top.bin ${DEPLOYDIR}/top.bin
 }
 addtask deploy before do_build after do_install
-
