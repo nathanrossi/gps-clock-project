@@ -31,12 +31,6 @@ kernel_do_configure_prepend() {
 	# spidev
 	echo "CONFIG_SPI_SPIDEV=y" >> ${BCONFIG}
 
-	# otg mode does not switch automatically (TODO: sort that out)
-	echo "CONFIG_USB_DWC2_PERIPHERAL=y" >> ${BCONFIG}
-	#echo "CONFIG_USB_DWC2_DEBUG=y" >> ${BCONFIG}
-	#echo "CONFIG_USB_DWC2_VERBOSE=y" >> ${BCONFIG}
-	echo "CONFIG_USB_GADGET_VBUS_DRAW=500" >> ${BCONFIG}
-
 	# usb gadgetfs
 	echo "CONFIG_USB_GADGET=y" >> ${BCONFIG}
 
@@ -76,10 +70,4 @@ kernel_do_configure_prepend() {
 COMPATIBLE_MACHINE = "^$"
 
 DEFAULT_CONFIG_armv7a = "multi_v7_defconfig"
-
-# raspberry pi (B, zero)
-COMPATIBLE_MACHINE_raspberrypi = "raspberrypi$"
-DEFAULT_CONFIG_raspberrypi = "bcm2835_defconfig"
-KERNEL_DEVICETREE_raspberrypi = "bcm2835-rpi-b.dtb"
-KERNEL_DEVICETREE_raspberrypi0 = "bcm2835-rpi-zero.dtb"
 
