@@ -23,74 +23,78 @@ echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------
 # define variables for commands
 # if not found, use BASEPROGS
 BASEPROGS = /home/nathan/fpga-ice40
-IVERILOG := $(call has-command,iverilog)
-VVP := $(call has-command,vvp)
-YOSYS := $(call has-command,yosys,$(BASEPROGS)/yosys/yosys)
-ARACHNEPNR := $(call has-command,arachne-pnr,$(BASEPROGS)/arachne-pnr/bin/arachne-pnr)
-ICEPACK := $(call has-command,icepack,$(BASEPROGS)/icestorm/icepack/icepack)
-ICETIME := $(call has-command,icetime,$(BASEPROGS)/icestorm/icetime/icetime)
-ICEPLL := $(call has-command,icepll,$(BASEPROGS)/icestorm/icepll/icepll)
-ICEBOX := $(call has-directory,/usr/share/icebox,$(BASEPROGS)/icestorm/icebox)
+IVERILOG ?= $(call has-command,iverilog)
+VVP ?= $(call has-command,vvp)
+YOSYS ?= $(call has-command,yosys,$(BASEPROGS)/yosys/yosys)
+ARACHNEPNR ?= $(call has-command,arachne-pnr,$(BASEPROGS)/arachne-pnr/bin/arachne-pnr)
+ICEPACK ?= $(call has-command,icepack,$(BASEPROGS)/icestorm/icepack/icepack)
+ICETIME ?= $(call has-command,icetime,$(BASEPROGS)/icestorm/icetime/icetime)
+ICEPLL ?= $(call has-command,icepll,$(BASEPROGS)/icestorm/icepll/icepll)
+ICEBOX ?= $(call has-directory,/usr/share/icebox,$(BASEPROGS)/icestorm/icebox)
+
+# output dir
+O ?= obj
+S ?= .
 
 all: bitstream tests
 
 TESTS_BROKEN =
 TESTS_SKIP = test-top test-top-load-spi
-TESTS = $(patsubst tests/%.v,%,$(shell ls tests/test-*.v))
+TESTS = $(patsubst tests/%.v,%,$(shell ls $(S)/tests/test-*.v))
 RUNTESTS = $(filter-out $(TESTS_BROKEN) $(TESTS_SKIP),$(patsubst tests/%.v,%,$(TESTS)))
 
 tests: $(RUNTESTS)
 
-$(foreach t,$(TESTS),$(eval $t: obj/tests/$t.run.log))
+$(foreach t,$(TESTS),$(eval $t: $(O)/tests/$t.run.log))
 
 bit: bitstream
-bitstream: obj/top.bin obj/top.asc obj/top.asc.timing.log
+bitstream: $(O)/top.bin $(O)/top.asc $(O)/top.asc.timing.log
 
 clean:
 	$(call echo-info,CLEAN,cleaning...)
-	-@rm -rf obj/
+	-@rm -rf $(O)/
 
 
 .PHONY: all clean tests bit bitstream $(TESTS)
 
-display-color-encoder.v: gamma-lookup-tables
-display-driver.v: display-color-encoder.v
-top.v: display-driver.v display-memory.v spi-controller.v
+$(S)/display-color-encoder.v: gamma-lookup-tables
+$(S)/display-driver.v: $(S)/display-color-encoder.v
+$(S)/top.v: $(S)/display-driver.v $(S)/display-memory.v $(S)/spi-controller.v
 
 GAMMA_TABLES = 8 9 10 11 12
-gamma-lookup-tables: $(foreach t,$(GAMMA_TABLES),obj/gamma-lookup-table-$t.hex)
+gamma-lookup-tables: $(foreach t,$(GAMMA_TABLES),$(O)/gamma-lookup-table-$t.hex)
 
-obj/gamma-lookup-table-%.hex: BITS = $(patsubst obj/gamma-lookup-table-%.hex,%,$@)
-obj/gamma-lookup-table-%.hex: scripts/gamma-correction-tables.py
+$(O)/gamma-lookup-table-%.hex: BITS = $(patsubst $(O)/gamma-lookup-table-%.hex,%,$@)
+$(O)/gamma-lookup-table-%.hex: $(S)/scripts/gamma-correction-tables.py
 	$(call safe-dir)
 	$(call echo-info,GLUT,generating gamma correction table for $(BITS) bits)
-	$(Q)./scripts/gamma-correction-tables.py $(BITS) > $@
+	$(Q)$(S)/scripts/gamma-correction-tables.py $(BITS) > $@
 
 #
 # Tests
 #
 
-obj/tests/test-display-driver-simple.vvp: display-driver.v display-color-encoder.v
-obj/tests/test-display-driver-10b.vvp: display-driver.v display-color-encoder.v
-obj/tests/test-display-driver-timing.vvp: display-driver.v display-color-encoder.v
-obj/tests/test-display-memory-simple.vvp: display-memory.v
-obj/tests/test-display-color-encoder-simple.vvp: display-color-encoder.v
-obj/tests/test-display-color-encoder-10b.vvp: display-color-encoder.v
-obj/tests/test-spi-slave-simple.vvp: spi-slave.v
-obj/tests/test-spi-controller.vvp: spi-controller.v spi-slave.v
-obj/tests/test-spi-controller-segments.vvp: spi-controller.v spi-slave.v
-obj/tests/test-top.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
-obj/tests/test-top-load-spi.vvp: top.v display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v
+$(O)/tests/test-display-driver-simple.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
+$(O)/tests/test-display-driver-10b.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
+$(O)/tests/test-display-driver-timing.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
+$(O)/tests/test-display-memory-simple.vvp: $(S)/display-memory.v
+$(O)/tests/test-display-color-encoder-simple.vvp: $(S)/display-color-encoder.v
+$(O)/tests/test-display-color-encoder-10b.vvp: $(S)/display-color-encoder.v
+$(O)/tests/test-spi-slave-simple.vvp: $(S)/spi-slave.v
+$(O)/tests/test-spi-controller.vvp: $(S)/spi-controller.v $(S)/spi-slave.v
+$(O)/tests/test-spi-controller-segments.vvp: $(S)/spi-controller.v $(S)/spi-slave.v
+$(O)/tests/test-top.vvp: $(S)/top.v $(S)/display-memory.v $(S)/display-driver.v $(S)/display-color-encoder.v $(S)/spi-controller.v $(S)/spi-slave.v
+$(O)/tests/test-top-load-spi.vvp: $(S)/top.v $(S)/display-memory.v $(S)/display-driver.v $(S)/display-color-encoder.v $(S)/spi-controller.v $(S)/spi-slave.v
 
-obj/tests/%.vvp: TEST_NAME = $(patsubst obj/tests/%.vvp,%,$@)
-obj/tests/%.vvp: tests/%.v tests/helpers.v
+$(O)/tests/%.vvp: TEST_NAME = $(patsubst $(O)/tests/%.vvp,%,$@)
+$(O)/tests/%.vvp: $(S)/tests/%.v $(S)/tests/helpers.v
 	$(call safe-dir)
 	$(call echo-info,SIMU,$(TEST_NAME))
 #	$(Q)$(IVERILOG) -E -D SIMULATION -g2012 -o $@.pp $(filter-out tests/helpers.v,$^)
 	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^)
 
-obj/tests/%.run.log: TEST_NAME = $(patsubst obj/tests/%.run.log,%,$@)
-obj/tests/%.run.log: obj/tests/%.vvp
+$(O)/tests/%.run.log: TEST_NAME = $(patsubst $(O)/tests/%.run.log,%,$@)
+$(O)/tests/%.run.log: $(O)/tests/%.vvp
 	$(call safe-dir)
 	$(Q)$(VVP) -n $^ -lxt2 > $@ 2>&1 $(call echo-pf-check,TEST,$(TEST_NAME))
 	$(call echo-report-test-assert,$@,$@) $(QSH)
@@ -106,23 +110,23 @@ TARGET_DEVICE = 1k
 TARGET_DEVICE_VARIANT = hx
 TARGET_PACKAGE = tq144
 
-obj/top-pll-config.v:
+$(O)/top-pll-config.v:
 	$(call safe-dir)
 	$(call echo-info,PLL,$@)
 	$(Q)$(ICEPLL) -i $(SOURCE_FREQ) -o $(TARGET_FREQ) -m -f $@ > $@.log
 	$(call echo-report,PLL Configuration for $@,$@.log) $(QSH)
 
-obj/top.blif: display-memory.v display-driver.v display-color-encoder.v spi-controller.v spi-slave.v obj/top-pll-config.v
+$(O)/top.blif: $(S)/display-memory.v $(S)/display-driver.v $(S)/display-color-encoder.v $(S)/spi-controller.v $(S)/spi-slave.v $(O)/top-pll-config.v
 
 # synth, pnr, bitmap
-obj/%.blif: %.v
+$(O)/%.blif: $(S)/%.v
 	$(call safe-dir)
 	$(call echo-info,SYNTH,$@)
 	$(Q)$(YOSYS) \
-		-p "$(foreach f,$(filter %.v,$^),read_verilog -defer -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" \
+		-p "$(foreach f,$(filter %.v,$^),read_verilog -defer -I$(O) -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" \
 			> $@.synthesis.log 2>&1
 
-obj/%.asc: obj/%.blif %.pcf
+$(O)/%.asc: $(O)/%.blif $(S)/%.pcf
 	$(call safe-dir)
 	$(call echo-info,P-N-R,$@)
 	$(Q)$(ARACHNEPNR) \
@@ -134,7 +138,7 @@ obj/%.asc: obj/%.blif %.pcf
 		> $@.log 2>&1
 	$(call echo-report,Place and Route report for $@,$@.log) $(QSH)
 
-obj/%.asc.timing.log: obj/%.asc %.pcf
+$(O)/%.asc.timing.log: $(O)/%.asc $(S)/%.pcf
 	$(call safe-dir)
 	$(call echo-info,TIMING,$@)
 	$(Q)$(ICETIME) \
@@ -146,7 +150,7 @@ obj/%.asc.timing.log: obj/%.asc %.pcf
 			> $@ 2>&1 $(call echo-pf-check,TIMING,$@)
 	$(call echo-report,Timing Report for $@,$@) $(QSH)
 
-obj/%.bin: obj/%.asc
+$(O)/%.bin: $(O)/%.asc
 	$(call safe-dir)
 	$(call echo-info,BITMAP,$@)
 	$(Q)$(ICEPACK) $^ $@ $(QSH)
