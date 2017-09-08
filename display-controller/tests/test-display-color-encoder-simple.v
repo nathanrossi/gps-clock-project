@@ -22,8 +22,7 @@ module test_display_color_encoder_simple;
 
 	integer i, c;
 	initial begin
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_display_color_encoder_simple);
+		`setup_vcd(test_display_color_encoder_simple);
 
 		pixel = 'h000000000000;
 

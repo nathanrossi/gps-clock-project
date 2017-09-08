@@ -35,8 +35,7 @@ module test_top_load_spi;
 
 	integer i = 0;
 	initial begin
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_top_load_spi);
+		`setup_vcd(test_top_load_spi);
 
 		// This test case is for observation only, and does not assert or
 		// validate any changes.

@@ -40,8 +40,7 @@ module test_display_driver_simple;
 
 	integer i, in, inn, j, r, k, kn;
 	initial begin
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_display_driver_simple);
+		`setup_vcd(test_display_driver_simple);
 
 		for (j = 0; j < 8; j = j + 1) begin
 			for (i = 0; i < 32; i = i + 1) begin

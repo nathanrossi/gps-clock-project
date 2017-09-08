@@ -12,8 +12,7 @@ module test_top;
 
 	integer i = 0;
 	initial begin
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_top);
+		`setup_vcd(test_top);
 		repeat(500000) begin
 			# 5 clk = !clk;
 			# 5 clk = !clk;

@@ -43,8 +43,7 @@ module test_display_driver_timing;
 		integer frame_count, frame_cycles;
 		integer mark_complete;
 
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_display_driver_timing);
+		`setup_vcd(test_display_driver_timing);
 
 		pixel <= 24'hffffff; // set all high, to determine full on time
 		frame_count = 0;

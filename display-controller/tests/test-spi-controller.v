@@ -52,8 +52,7 @@ module test_spi_controller;
 	initial begin
 		integer i, j, z, x, y;
 
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_spi_controller);
+		`setup_vcd(test_spi_controller);
 
 		mosi <= 0; sclk <= 0; ss <= 0;
 		clk = 0; rst = 1;

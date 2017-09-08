@@ -3,14 +3,16 @@
 Q = $(if $(filter $(V),2),,@)
 QSH = $(if $(V),,> /dev/null 2>&1)
 
+tput = $(shell tput $(1) 2> /dev/null)
+
 has-command = $(if $(shell command -v $(1) 2> /dev/null),$(shell command -v $(1) 2> /dev/null),$(2))
 has-directory = $(if $(shell test -d $(1) && echo $(1)),$(1),$(2))
 
 safe-dir = @mkdir -p $(dir $@)
 echo-info = @printf " %-6s  %4s  %s\n" "$(1)" "" "$(2)"; \
 
-echo-pass = printf " %-6s  `tput setaf 2`%4s`tput sgr0`  %s\n" "$(1)" "pass" "$(2)"
-echo-fail = printf " %-6s  `tput setaf 1`%4s`tput sgr0`  %s\n" "$(1)" "fail" "$(2)"
+echo-pass = printf " %-6s  $(call tput,setaf 2)%4s$(call tput,sgr0)  %s\n" "$(1)" "pass" "$(2)"
+echo-fail = printf " %-6s  $(call tput,setaf 1)%4s$(call tput,sgr0)  %s\n" "$(1)" "fail" "$(2)"
 echo-pf-check = ; STATUS=$$?; \
 		if [ "$$STATUS" = "0" ]; then \
 			$(call echo-pass,$(1),$(2)); \
@@ -18,7 +20,7 @@ echo-pf-check = ; STATUS=$$?; \
 			$(call echo-fail,$(1),$(2)); \
 		fi
 echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
-echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | egrep assertion\|info; echo '-------------------- $(1) --------------------'"
+echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) $(if $(filter $(V),2),,| egrep assertion\|info); echo '-------------------- $(1) --------------------'"
 
 # define variables for commands
 # if not found, use BASEPROGS
@@ -33,14 +35,14 @@ ICEPLL ?= $(call has-command,icepll,$(BASEPROGS)/icestorm/icepll/icepll)
 ICEBOX ?= $(call has-directory,/usr/share/icebox,$(BASEPROGS)/icestorm/icebox)
 
 # output dir
-O ?= obj
-S ?= .
+O ?= $(shell realpath obj)
+S ?= $(shell realpath .)
 
 all: bitstream tests
 
 TESTS_BROKEN =
 TESTS_SKIP = test-top test-top-load-spi
-TESTS = $(patsubst tests/%.v,%,$(shell ls $(S)/tests/test-*.v))
+TESTS = $(patsubst $(S)/tests/%.v,%,$(shell ls $(S)/tests/test-*.v))
 RUNTESTS = $(filter-out $(TESTS_BROKEN) $(TESTS_SKIP),$(patsubst tests/%.v,%,$(TESTS)))
 
 tests: $(RUNTESTS)
@@ -90,13 +92,17 @@ $(O)/tests/%.vvp: TEST_NAME = $(patsubst $(O)/tests/%.vvp,%,$@)
 $(O)/tests/%.vvp: $(S)/tests/%.v $(S)/tests/helpers.v
 	$(call safe-dir)
 	$(call echo-info,SIMU,$(TEST_NAME))
-#	$(Q)$(IVERILOG) -E -D SIMULATION -g2012 -o $@.pp $(filter-out tests/helpers.v,$^)
-	$(Q)$(IVERILOG) -D SIMULATION -g2012 -o $@ $(filter-out tests/helpers.v,$^)
+#	$(Q)$(IVERILOG) -E -D SIMULATION -g2012 -o $@.pp $(filter-out $(S)/tests/helpers.v,$^)
+	$(Q)cd $(O) && $(IVERILOG) \
+		-DSIMULATION \
+		-DVCD_FILE=$(patsubst %.vvp,%.vcd,$@) \
+		-g2012 -I$(S) -I$(O) -y$(O) -o $@ \
+		$(filter-out $(S)/tests/helpers.v,$^)
 
 $(O)/tests/%.run.log: TEST_NAME = $(patsubst $(O)/tests/%.run.log,%,$@)
 $(O)/tests/%.run.log: $(O)/tests/%.vvp
 	$(call safe-dir)
-	$(Q)$(VVP) -n $^ -lxt2 > $@ 2>&1 $(call echo-pf-check,TEST,$(TEST_NAME))
+	$(Q)cd $(O) && $(VVP) -n $^ -lxt2 > $@ 2>&1 $(call echo-pf-check,TEST,$(TEST_NAME))
 	$(call echo-report-test-assert,$@,$@) $(QSH)
 
 #
@@ -122,7 +128,7 @@ $(O)/top.blif: $(S)/display-memory.v $(S)/display-driver.v $(S)/display-color-en
 $(O)/%.blif: $(S)/%.v
 	$(call safe-dir)
 	$(call echo-info,SYNTH,$@)
-	$(Q)$(YOSYS) \
+	$(Q)cd $(O) && $(YOSYS) \
 		-p "$(foreach f,$(filter %.v,$^),read_verilog -defer -I$(O) -DSYNTHESIS $f; ) synth_ice40 -top $$(basename $@ .blif | sed s/-/_/) -blif $@" \
 			> $@.synthesis.log 2>&1
 

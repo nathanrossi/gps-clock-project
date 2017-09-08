@@ -29,8 +29,7 @@ module test_display_memory_simple;
 	initial begin
 		integer i = 0, j = 0;
 
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_display_memory_simple);
+		`setup_vcd(test_display_memory_simple);
 
 		flip <= 0;
 		wrow <= 0;

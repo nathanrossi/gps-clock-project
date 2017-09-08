@@ -1,4 +1,12 @@
 
+`define setup_vcd(test) do begin \
+			`ifdef VCD_FILE \
+				$display({"setting up vcd file @ ", `"`VCD_FILE`"}); \
+				$dumpfile(`"`VCD_FILE`"); \
+				$dumpvars(0, test); \
+			`endif \
+		end while (0)
+
 `define __gen_assert_compare(cmp, acmp, file, line, printtype, a0, a1) do begin \
 			if ((a0) acmp (a1)) begin \
 				$display("[@%8t %0s:%0d] assertion: 'a0' cmp 'a1' failed, printtype acmp printtype", $time, file, line, (a0), (a1)); \

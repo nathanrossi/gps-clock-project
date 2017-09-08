@@ -27,8 +27,7 @@ module test_spi_slave_simple;
 	reg [7:0] read_data = 0;
 	integer i, c, j;
 	initial begin
-		$dumpfile({"obj/", `__FILE__, ".vcd"});
-		$dumpvars(0, test_spi_slave_simple);
+		`setup_vcd(test_spi_slave_simple);
 
 		mosi = 0;
 		sclk = 0;
