@@ -3,6 +3,9 @@
 Q = $(if $(filter $(V),2),,@)
 QSH = $(if $(V),,> /dev/null 2>&1)
 
+has-command = $(shell command -v $(1) 2> /dev/null)
+has-directory = $(shell test -d $(1) && echo $(1))
+
 safe-dir = @mkdir -p $(dir $@)
 echo-info = @printf " %-6s  %4s  %s\n" "$(1)" "" "$(2)"; \
 
@@ -17,15 +20,24 @@ echo-pf-check = ; STATUS=$$?; \
 echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
 echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) | egrep assertion\|info; echo '-------------------- $(1) --------------------'"
 
+# define variables for commands
+IVERILOG := $(call has-command,iverilog)
+VVP := $(call has-command,vvp)
+YOSYS := $(call has-command,yosys)
+ARACHNEPNR := $(call has-command,arachne-pnr)
+ICEPACK := $(call has-command,icepack)
+ICETIME := $(call has-command,icetime)
+ICEPLL := $(call has-command,icepll)
+ICEBOX := $(call has-directory,/usr/share/icebox)
+
+# if unset, use BASEPROGS
 BASEPROGS = /home/nathan/fpga-ice40
-YOSYS ?= $(BASEPROGS)/yosys/yosys
-ARACHNEPNR ?= $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
-ICEBOX ?= $(BASEPROGS)/icestorm/icebox
-ICEPACK ?= $(BASEPROGS)/icestorm/icepack/icepack
-ICETIME ?= $(BASEPROGS)/icestorm/icetime/icetime
-ICEPLL ?= $(BASEPROGS)/icestorm/icepll/icepll
-IVERILOG ?= iverilog
-VVP ?= vvp
+YOSYS := $(BASEPROGS)/yosys/yosys
+ARACHNEPNR := $(BASEPROGS)/arachne-pnr/bin/arachne-pnr
+ICEBOX := $(BASEPROGS)/icestorm/icebox
+ICETIME := $(BASEPROGS)/icestorm/icetime/icetime
+ICEPLL := $(BASEPROGS)/icestorm/icepll/icepll
+ICEPACK := $(BASEPROGS)/icestorm/icepack/icepack
 
 all: bitstream tests
 
