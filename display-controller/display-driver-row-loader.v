@@ -1,7 +1,6 @@
 module display_driver_row_loader (clk, rst, load, complete, oclk, column, pipe);
 	parameter integer pipe_length = 1;
 	parameter integer columns = 32; // number of bits per line
-	parameter integer bitwidth = 8;
 
 	// clock and reset
 	input wire clk, rst;

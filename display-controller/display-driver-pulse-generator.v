@@ -1,4 +1,4 @@
-module display_driver_pulse_generator (clk, rst, go, complete, select);
+module display_driver_pulse_generator (clk, rst, go, complete, full_complete, select);
 	parameter integer bitwidth = 8;
 
 	// clock and reset
@@ -27,20 +27,19 @@ module display_driver_pulse_generator (clk, rst, go, complete, select);
 	//
 	input wire go;
 	output reg complete = 0;
+	output reg full_complete = 0;
 	reg integer pulse_bit = 0;
 	reg [bitwidth - 1:0] pulse_length = {bitwidth{1'b1}};
 	reg [bitwidth - 1:0] pulse_counter = {bitwidth{1'b0}};
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			complete <= 0;
+			full_complete <= 0;
 			pulse_counter <= 0;
 			pulse_bit <= 0;
 			pulse_length <= {bitwidth{1'b1}};
 		end else begin
 			if (complete == 0 && go == 1) begin
-				$display("pulse_counter = %d", pulse_counter);
-				$display("pulse_length = %d", pulse_length);
-				$display("pulse_bit = %d", pulse_bit);
 				if (pulse_counter == pulse_length) begin
 					complete <= 1;
 					pulse_counter <= 0;
@@ -48,6 +47,7 @@ module display_driver_pulse_generator (clk, rst, go, complete, select);
 						pulse_bit <= 0;
 						// reset to full
 						pulse_length <= {bitwidth{1'b1}};
+						full_complete <= 1;
 					end else begin
 						pulse_bit <= pulse_bit + 1;
 						// half the length
@@ -58,6 +58,7 @@ module display_driver_pulse_generator (clk, rst, go, complete, select);
 				end
 			end else begin
 				complete <= 0;
+				full_complete <= 0;
 				pulse_counter <= 0;
 			end
 		end
