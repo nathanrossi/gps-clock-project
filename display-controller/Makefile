@@ -80,6 +80,7 @@ $(O)/tests/test-display-driver-simple.vvp: $(S)/display-driver.v $(S)/display-co
 $(O)/tests/test-display-driver-10b.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
 $(O)/tests/test-display-driver-timing.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
 $(O)/tests/test-display-driver-rgb-pipe.vvp: $(S)/display-driver-rgb-pipe.v
+$(O)/tests/test-display-driver-pulsewidth.vvp: $(S)/display-driver-pulsewidth.v $(S)/display-driver-row-loader.v $(S)/display-driver-rgb-pipe.v $(S)/display-driver-pulse-generator.v
 $(O)/tests/test-display-driver-pulse-generator.vvp: $(S)/display-driver-pulse-generator.v
 $(O)/tests/test-display-driver-row-loader.vvp: $(S)/display-driver-row-loader.v
 $(O)/tests/test-display-memory-simple.vvp: $(S)/display-memory.v
