@@ -46,7 +46,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 	assign rgb = orgb;
 
 	input wire uart_rxi;
-	output reg uart_txd = 0;
+	output reg uart_txo = 0;
 	// TODO: simple UART framebuffer write
 
 	// i/o for SPI interface
