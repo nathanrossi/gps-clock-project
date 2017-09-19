@@ -35,7 +35,7 @@ module display_color_encoder (clk, pixel, cpixel);
 				// issue/limitation with yosys and "non-constant"
 				// initialization of memory. It also seems to wipe out brams
 				// that are not used fully
-				$readmemh("gamma-lookup-table-10.hex", gamma_lookup_data);
+				$readmemh("gamma_lookup_table_10.hex", gamma_lookup_data);
 
 				`ifndef SYNTHESIS
 				if (g == 0) begin
