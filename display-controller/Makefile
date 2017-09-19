@@ -64,6 +64,8 @@ $(O)/tests/tests/spi_controller_simple.vvp: spi_controller.v spi_slave.v
 $(O)/tests/tests/top_load_spi.vvp: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/gamma_lookup_table_10.hex
 $(O)/tests/tests/top_run.vvp: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/gamma_lookup_table_10.hex
 
+$(O)/tests/uart/tests/uart_rx_pattern.vvp: uart/uart_rx.v
+
 # clean
 clean:
 	$(call echo-info,CLEAN,cleaning...)
@@ -89,6 +91,7 @@ setup-tests = \
 		$(eval $(O)/tests/$(test).vvp: $(test).v))
 
 $(call setup-tests,tests)
+$(call setup-tests,uart/tests)
 
 tests: $(RUNTESTS)
 $(foreach test,$(TESTS),$(eval $(test): $(O)/tests/$(test).run.log))
