@@ -1,5 +1,6 @@
+`include "helpers.v"
 
-module test_top_load_spi;
+module top_load_spi;
 	reg clk = 0;
 	reg sclk = 0;
 	reg ss = 1;
@@ -35,7 +36,7 @@ module test_top_load_spi;
 
 	integer i = 0;
 	initial begin
-		`setup_vcd(test_top_load_spi);
+		`setup_vcd(top_load_spi);
 
 		// This test case is for observation only, and does not assert or
 		// validate any changes.

@@ -1,7 +1,6 @@
+`include "helpers.v"
 
-`include "tests/helpers.v"
-
-module test_display_color_encoder_simple;
+module display_color_encoder_simple;
 	reg clk = 0;
 	reg [47:0] pixel;
 	reg [59:0] cpixel;
@@ -22,7 +21,7 @@ module test_display_color_encoder_simple;
 
 	integer i, c;
 	initial begin
-		`setup_vcd(test_display_color_encoder_simple);
+		`setup_vcd(display_color_encoder_simple);
 
 		pixel = 'h000000000000;
 

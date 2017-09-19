@@ -1,6 +1,6 @@
-`include "tests/helpers.v"
+`include "helpers.v"
 
-module test_display_driver_pulse_generator;
+module pulse_generator_simple;
 	reg clk = 0;
 	reg rst = 0;
 	reg go = 0;
@@ -23,7 +23,7 @@ module test_display_driver_pulse_generator;
 
 	initial begin
 		integer i = 0, j = 0, k = 0;
-		`setup_vcd(test_display_driver_pulse_generator);
+		`setup_vcd(pulse_generator_simple);
 
 		rst <= 0;
 		go <= 0;

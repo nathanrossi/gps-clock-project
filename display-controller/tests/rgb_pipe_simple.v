@@ -1,6 +1,6 @@
-`include "tests/helpers.v"
+`include "helpers.v"
 
-module test_display_driver_rgb_pipe;
+module rgb_pipe_simple;
 	reg clk = 0;
 	reg integer select = 0;
 	reg go = 0;
@@ -26,7 +26,7 @@ module test_display_driver_rgb_pipe;
 
 	initial begin
 		integer i = 0;
-		`setup_vcd(test_display_driver_rgb_pipe);
+		`setup_vcd(rgb_pipe_simple);
 
 		select <= 0;
 		go <= 0;

@@ -1,8 +1,7 @@
-
-`include "tests/helpers.v"
+`include "helpers.v"
 
 `timescale 1 ns / 1 ps
-module test_display_driver_timing;
+module display_driver_timing;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
@@ -42,7 +41,7 @@ module test_display_driver_timing;
 		integer frame_count, frame_cycles;
 		integer mark_complete;
 
-		`setup_vcd(test_display_driver_timing);
+		`setup_vcd(display_driver_timing);
 
 		pixel <= 24'hffffff; // set all high, to determine full on time
 		frame_count = 0;

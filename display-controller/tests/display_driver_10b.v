@@ -1,7 +1,6 @@
+`include "helpers.v"
 
-`include "tests/helpers.v"
-
-module test_display_driver_simple;
+module display_driver_simple;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
@@ -39,7 +38,7 @@ module test_display_driver_simple;
 
 	integer i, in, inn, j, r, k, kn;
 	initial begin
-		`setup_vcd(test_display_driver_simple);
+		`setup_vcd(display_driver_simple);
 
 		for (j = 0; j < 8; j = j + 1) begin
 			for (i = 0; i < 32; i = i + 1) begin

@@ -1,6 +1,6 @@
-`include "tests/helpers.v"
+`include "helpers.v"
 
-module test_display_driver_row_loader;
+module row_loader_simple;
 	reg clk = 0, rst = 0;
 	reg load = 0;
 	wire complete;
@@ -10,8 +10,7 @@ module test_display_driver_row_loader;
 
 	display_driver_row_loader #(
 		.pipe_length(2),
-		.columns(32),
-		.bitwidth(8)
+		.columns(32)
 	) u_loader (
 		.clk(clk),
 		.rst(rst),
@@ -28,7 +27,7 @@ module test_display_driver_row_loader;
 
 	initial begin
 		integer i = 0;
-		`setup_vcd(test_display_driver_row_loader);
+		`setup_vcd(row_loader_simple);
 
 		rst <= 0;
 		load <= 0;

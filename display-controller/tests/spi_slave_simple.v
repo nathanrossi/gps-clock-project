@@ -1,7 +1,6 @@
+`include "helpers.v"
 
-`include "tests/helpers.v"
-
-module test_spi_slave_simple;
+module spi_slave_simple;
 	reg clk = 0, sclk = 0, rst = 0, ss = 1;
 	reg mosi = 0;
 	wire miso;
@@ -27,7 +26,7 @@ module test_spi_slave_simple;
 	reg [7:0] read_data = 0;
 	integer i, c, j;
 	initial begin
-		`setup_vcd(test_spi_slave_simple);
+		`setup_vcd(spi_slave_simple);
 
 		mosi = 0;
 		sclk = 0;

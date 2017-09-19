@@ -1,7 +1,6 @@
+`include "helpers.v"
 
-`include "tests/helpers.v"
-
-module test_spi_controller;
+module spi_controller_simple;
 	reg clk = 0, rst = 0;
 	reg sclk = 0, ss = 0, mosi = 0;
 	wire miso;
@@ -52,7 +51,7 @@ module test_spi_controller;
 	initial begin
 		integer i, j, z, x, y;
 
-		`setup_vcd(test_spi_controller);
+		`setup_vcd(spi_controller_simple);
 
 		mosi <= 0; sclk <= 0; ss <= 0;
 		clk = 0; rst = 1;

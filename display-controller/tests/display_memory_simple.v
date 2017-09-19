@@ -1,7 +1,6 @@
+`include "helpers.v"
 
-`include "tests/helpers.v"
-
-module test_display_memory_simple;
+module display_memory_simple;
 	reg clk = 0;
 	reg flip, wen = 0;
 	reg [2:0] wrow, rrow = 0;
@@ -29,7 +28,7 @@ module test_display_memory_simple;
 	initial begin
 		integer i = 0, j = 0;
 
-		`setup_vcd(test_display_memory_simple);
+		`setup_vcd(display_memory_simple);
 
 		flip <= 0;
 		wrow <= 0;
