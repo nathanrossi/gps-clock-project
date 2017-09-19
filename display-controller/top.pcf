@@ -20,6 +20,9 @@ set_io leds[2] 97
 set_io leds[3] 96
 set_io leds[4] 95
 
+set_io uart_txo 8
+set_io uart_rxi 9
+
 set_io spi_sclk 118
 set_io spi_ss 119
 set_io spi_mosi 45

@@ -1,5 +1,5 @@
 
-module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_miso, debug);
+module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_ss, spi_mosi, spi_miso, debug);
 	input wire clk;
 	reg rst = 0;
 
@@ -45,6 +45,10 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 	assign a = row[2:0];
 	assign rgb = orgb;
 
+	input wire uart_rxi;
+	output reg uart_txd = 0;
+	// TODO: simple UART framebuffer write
+
 	// i/o for SPI interface
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output wire spi_miso;
@@ -68,8 +72,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, spi_sclk, spi_ss, spi_mosi, spi_mis
 		.segments(segments),
 		.rows(rows),
 		.columns(columns),
-		.bitwidth(bitdepth),
-		.cyclewidth(10)
+		.bitwidth(bitdepth)
 	) u_driver (
 		.clk(sysclk),
 		.rst(rst),
