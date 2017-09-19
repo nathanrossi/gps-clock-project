@@ -12,25 +12,11 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	parameter integer rows = 8; // number of addressable rows
 	parameter integer columns = 32; // number of bits per line
 	parameter integer bitwidth = 8;
-	parameter integer cyclewidth = 8;
 
-	input clk, rst;
-	wire clk, rst;
+	input wire clk, rst;
 
 	// Color Correction (gamma correction)
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
-	wire [((cyclewidth * 3) * segments) - 1:0] cpixel;
-
-	display_color_encoder #(
-		.segments(segments),
-		.bitwidth(bitwidth),
-		.cyclewidth(cyclewidth)
-	) u_color_encoder (
-		.clk(clk),
-		.pixel(pixel),
-		.cpixel(cpixel)
-	);
-
 	output reg [(3 * segments) - 1:0] rgb = 0;
 	output reg oe = 0, lat = 0, oclk = 0;
 
@@ -40,8 +26,8 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	output wire [$clog2(columns) - 1:0] column;
 	assign column = column_counter[0 +:$clog2(columns)];
 
-	// cycle counter (must have one more bit to store a post stage)
-	reg [cyclewidth:0] cycle = 0;
+	// pwm cycle counter (must have one more bit to store a post stage)
+	reg [bitwidth:0] cycle = 0;
 
 	// RGB pixel values to bits
 	integer i = 0, c = 0;
@@ -52,8 +38,8 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 			for (i = 0; i < segments; i = i + 1) begin
 				for (c = 0; c < 3; c = c + 1) begin
 					rgb[(3 * i) + c] <=
-						(cpixel[(cyclewidth * 3 * i) + (cyclewidth * c) +:cyclewidth] >= cycle[0 +:cyclewidth]) &&
-						(cpixel[(cyclewidth * 3 * i) + (cyclewidth * c) +:cyclewidth] != 0);
+						(pixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] >= cycle[0 +:bitwidth]) &&
+						(pixel[(bitwidth * 3 * i) + (bitwidth * c) +:bitwidth] != 0);
 				end
 			end
 		end
@@ -220,10 +206,10 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 				end
 				_fsm2_load_wait: begin
 					if (load_complete == 1) begin
-						// a cycle of 2^cyclewidth is the dummy state that
+						// a cycle of 2^bitwidth is the dummy state that
 						// represents displaying the previously loaded state
 						// for the valid output length
-						if (cycle >= (2 ** cyclewidth)) begin
+						if (cycle >= (2 ** bitwidth)) begin
 							fsm2_state <= _fsm2_hold;
 							cycle <= 0;
 						end else begin

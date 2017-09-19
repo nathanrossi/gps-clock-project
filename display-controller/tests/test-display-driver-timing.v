@@ -6,7 +6,7 @@ module test_display_driver_timing;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
-	reg [23:0] pixel = 0;
+	reg [(10 * 3) - 1:0] pixel = 0;
 	wire frame_complete, oe, lat, oclk;
 	wire [2:0] rgb;
 
@@ -14,8 +14,7 @@ module test_display_driver_timing;
 		.segments(1),
 		.rows(8),
 		.columns(32),
-		.bitwidth(8),
-		.cyclewidth(10)
+		.bitwidth(10)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
