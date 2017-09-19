@@ -5,7 +5,7 @@ module test_display_driver_simple;
 	reg clk, rst;
 	wire [2:0] row;
 	wire [4:0] column;
-	reg [23:0] pixel = 0;
+	reg [(10 * 3) - 1:0] pixel = 0;
 	wire frame_complete, oe, lat, oclk;
 	wire [2:0] rgb;
 
@@ -13,8 +13,7 @@ module test_display_driver_simple;
 		.segments(1),
 		.rows(8),
 		.columns(32),
-		.bitwidth(8),
-		.cyclewidth(10)
+		.bitwidth(10)
 	) u_driver (
 		.clk(clk),
 		.rst(rst),
@@ -33,7 +32,7 @@ module test_display_driver_simple;
 		# 5 clk = !clk;
 
 	// dummy memory
-	reg [23:0] pixel_data [0:(32 * 8) - 1];
+	reg [(10 * 3) - 1:0] pixel_data [0:(32 * 8) - 1];
 	always @(posedge clk) begin
 		pixel <= pixel_data[{row, column}];
 	end
@@ -45,9 +44,9 @@ module test_display_driver_simple;
 		for (j = 0; j < 8; j = j + 1) begin
 			for (i = 0; i < 32; i = i + 1) begin
 				if (i == 0 && j == 0)
-					pixel_data[(j * 32) + i] <= 24'hff0000;
+					pixel_data[(j * 32) + i] <= 30'h3ff00000;
 				else
-					pixel_data[(j * 32) + i] <= 24'h000000;
+					pixel_data[(j * 32) + i] <= 30'h00000000;
 			end
 		end
 		clk = 0;

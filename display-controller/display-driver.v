@@ -1,13 +1,23 @@
 //
-// Display Driver control machine
-// ------------------------------
+// PWM Display Driver control machine
+// ----------------------------------
 //
 // This module is intended to be used as a full control component that accepts
-// pixel data and outputs to a serial latched row/col driver display (e.g. LED
-// Pixel Displays).
+// pixel intensity data and outputs to a serial latched row/col driver display
+// (e.g. LED Pixel Displays).
+//
+// This driver is not pipelined and slows down by load_delay to account for
+// delays in reading from memory, processing pixel data to intensity before
+// being available for pwm comparison.
+//
+// The module handles brightness based intensity display by setting the row
+// bits and pulsing them based on their value compared against a PWM row
+// global counter. This means that each column needs to be latched for each
+// pulse cycle.
 //
 
 module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, lat, oclk);
+	parameter integer load_delay = 1; // number of cycles it takes to load from memory
 	parameter integer segments = 1;
 	parameter integer rows = 8; // number of addressable rows
 	parameter integer columns = 32; // number of bits per line
@@ -57,8 +67,8 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	// changed.
 	//
 	// A = addr is valid
-	// P = bram frame buffer has output valid
-	// C = corrected pixel is valid
+	// P = bram frame buffer has output valid (load_delay + 1)
+	// C = corrected pixel is valid (load_delay + 2)
 	// R = rgb bit outputs are valid
 	// -_ = indicates the oclk high->low pulse
 	//
@@ -78,13 +88,12 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	//   state which allows for the states to trigger inversions of the oclk.
 	//
 	integer fsm1_state = 0;
+	reg integer load_delay_counter = 0;
 	reg load_complete = 0;
 	parameter
 		_fsm1_hold = 0,
 		_fsm1_wait = 1,
 		_fsm1_addr = 2,
-		_fsm1_pixel = 3,
-		_fsm1_correct = 4,
 		_fsm1_rgbbits = 5,
 		_fsm1_push = 6,
 		_fsm1_push_hold = 7;
@@ -94,6 +103,7 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 			oclk <= 0;
 			column_counter <= 0;
 			load_complete <= 0;
+			load_delay_counter <= 0;
 			fsm1_state <= _fsm1_wait;
 		end else begin
 			oclk <= (fsm1_state == _fsm1_rgbbits || fsm1_state == _fsm1_push_hold);
@@ -111,12 +121,14 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 					column_counter <= 0;
 					load_complete <= 0;
 				end
-				_fsm1_addr: fsm1_state <= _fsm1_pixel;
-				_fsm1_pixel: begin
-					fsm1_state <= _fsm1_correct;
-					column_counter <= column_counter + 1;
+				_fsm1_addr: begin
+					if (load_delay_counter >= load_delay) begin
+						fsm1_state <= _fsm1_rgbbits;
+						load_delay_counter <= 0;
+					end else begin
+						load_delay_counter <= load_delay_counter + 1;
+					end
 				end
-				_fsm1_correct: fsm1_state <= _fsm1_rgbbits;
 				_fsm1_rgbbits: begin
 					fsm1_state <= _fsm1_push;
 					column_counter <= column_counter + 1;

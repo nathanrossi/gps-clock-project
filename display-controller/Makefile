@@ -77,9 +77,9 @@ $(O)/gamma-lookup-table-%.hex: $(S)/scripts/gamma-correction-tables.py
 # Tests
 #
 
-$(O)/tests/test-display-driver-simple.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
-$(O)/tests/test-display-driver-10b.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
-$(O)/tests/test-display-driver-timing.vvp: $(S)/display-driver.v $(S)/display-color-encoder.v
+$(O)/tests/test-display-driver-simple.vvp: $(S)/display-driver.v
+$(O)/tests/test-display-driver-10b.vvp: $(S)/display-driver.v
+$(O)/tests/test-display-driver-timing.vvp: $(S)/display-driver.v
 $(O)/tests/test-display-driver-rgb-pipe.vvp: $(S)/display-driver-rgb-pipe.v
 $(O)/tests/test-display-driver-pw-timing.vvp: $(S)/display-driver-pulsewidth.v $(S)/display-driver-row-loader.v $(S)/display-driver-rgb-pipe.v $(S)/display-driver-pulse-generator.v
 $(O)/tests/test-display-driver-pulsewidth.vvp: $(S)/display-driver-pulsewidth.v $(S)/display-driver-row-loader.v $(S)/display-driver-rgb-pipe.v $(S)/display-driver-pulse-generator.v
