@@ -72,6 +72,7 @@ $(O)/tests/tests/top_run.vvp: top.v display_driver.v display_memory.v spi_contro
 
 $(O)/tests/uart/tests/uart_rx_pattern.vvp: uart/uart_rx.v
 $(O)/tests/uart/tests/uart_tx_pattern.vvp: uart/uart_tx.v
+$(O)/tests/uart/tests/uart_loopback.vvp: uart/uart_rx.v uart/uart_tx.v
 
 # clean
 clean:

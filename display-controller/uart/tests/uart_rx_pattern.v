@@ -7,7 +7,7 @@ module uart_rx_pattern;
 	wire valid;
 
 	uart_rx #(
-		.divisor(1024)
+		.divisor(32)
 	) u_uart_rx (
 		.clk(clk),
 		.rst(rst),
@@ -20,37 +20,42 @@ module uart_rx_pattern;
 	always
 		# 5 clk = !clk;
 
-	integer i, c, j;
+	integer i, j;
 	initial begin
 		`setup_vcd(uart_rx_pattern);
 
+		rst <= 1;
+		@(negedge clk);
+		rst <= 0;
+
 		// uarts idles high
-		rxi = 1;
+		rxi <= 1;
 		repeat (10) begin
 			@(negedge clk);
 		end
 
 		for (j = 0; j < 256; j = j + 1) begin
 			// start + data bits
-			for (i = 0; i < 9; i = i + 1) begin
-				rxi <= (i == 0) ? 1'b0 : j[i - 1];
-				repeat (1024) begin
+			for (i = 0; i < 10; i = i + 1) begin
+				if (i == 0) // start
+					rxi <= 0;
+				else if (i == 9) // stop
+					rxi <= 1;
+				else // data
+					rxi <= j[i - 1];
+
+				// once complete the last clock tick the output becomes valid
+				repeat (32 * 2) begin
 					@(negedge clk);
 				end
 			end
+
 			// at some point in the above valid was asserted
 			`assert_eq(valid, 1);
 			`assert_eq(data, j[7:0]);
 			@(negedge clk);
-
-			// stop bit
-			rxi <= 1;
-			repeat (1024) begin
-				@(negedge clk);
-			end
 		end
 
 		$finish(0);
 	end
 endmodule
-

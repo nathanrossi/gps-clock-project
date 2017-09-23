@@ -9,17 +9,23 @@
 // sender and receiver only apply at the frame level, resulting in
 // significantly less issues with drift or stretching.
 //
-// This core is very simple and only supports 8N1.
+//
+// Note: divisor should be half that of the divisor required to match the
+// target baud rate.
 
 module uart_rx(clk, rst, rxi, data, valid);
 	parameter integer bitwidth = 8;
-	parameter integer divisor = 0; // the baud rate divisor of clk
+	parameter integer divisor = 0;
+	parameter integer startbits = 1;
+	parameter integer stopbits = 1;
 
 	input wire clk, rst;
 	input wire rxi;
 
-	output reg [bitwidth - 1:0] data = {bitwidth{1'b0}};
+	reg [bitwidth + startbits + stopbits - 1:0] sdata = {(bitwidth + startbits + stopbits){1'b0}};
 	output reg valid = 0;
+	output wire [bitwidth - 1:0] data;
+	assign data = sdata[bitwidth + startbits - 1: startbits];
 
 	// buffer the rxi input at clk rate, which is faster than the divisor
 	// rate.
@@ -32,39 +38,56 @@ module uart_rx(clk, rst, rxi, data, valid);
 		if (rst == 1) begin
 			rxi_buf <= 2'b11;
 			baud_counter <= 0;
-			data <= {bitwidth{1'b0}};
+			sdata <= {bitwidth{1'b0}};
 			valid <= 0;
 			cbit <= 0;
 		end else begin
+			valid <= 0;
 			// detect falling edge of start bit
 			if (cbit == 0 && rxi_buf == 2'b10) begin
 				// start the frame
 				cbit <= cbit + 1;
-				baud_counter <= 0;
-				valid <= 0;
+				// the detection of the trigger takes 2 cycle, 1 for the
+				// buffering, and the second as this detection is synchronous
+				baud_counter <= 2;
 			end else if (cbit != 0) begin
 				baud_counter <= baud_counter + 1;
+
+				if (baud_counter == divisor - 1) begin
+					baud_counter <= 0;
+					cbit <= cbit + 1;
+
+					if (cbit[0] == 1) begin
+						// When the counter is at ~ half way, sample the input as
+						// sdata. Sampling the start bit is fine as it is dropped.
+						`ifndef SYNTHESIS
+							$display("sample bit %b here, cbit %d, b %d, %b|%h|%b",
+								rxi_buf[0], cbit[31:1], baud_counter,
+								rxi_buf[0], sdata[bitwidth + startbits + stopbits - 1:2], sdata[0]);
+						`endif
+						sdata <= {rxi_buf[0], sdata[bitwidth + startbits + stopbits - 1:1]};
+					end else begin
+						// When the counter has hit the divisor twice
+						if (cbit == ((bitwidth + startbits + stopbits) * 2)) begin
+							cbit <= 0;
+							valid <= 1;
+							`ifndef SYNTHESIS
+								$display("valid here, %b|%h|%b",
+									sdata[bitwidth + startbits + stopbits - 1],
+									sdata[bitwidth + startbits + stopbits - 2:1],
+									sdata[0]);
+							`endif
+						end
+					end
+				end
 				if (cbit == 1 && rxi_buf[0] == 1) begin
 					// Detect failed start bit, bit musts be low for at
 					// least 1/2 expected width of bit. Otherwise
 					// considered a stray pulse.
+					`ifndef SYNTHESIS
+						$display("stray pulse detected");
+					`endif
 					cbit <= 0;
-				end else if (baud_counter == divisor / 2) begin
-					// When the counter is at ~ half way, sample the input as
-					// data. Sampling the start bit is fine as it is dropped.
-					data <= {rxi_buf[0], data[7:1]};
-					cbit <= cbit + 1;
-					// set valid here, this gives time to process before the
-					// next input word
-					if (cbit == 9) begin
-						valid <= 1;
-					end
-				end else if (baud_counter >= divisor) begin
-					// When the counter has hit the divisor
-					if (cbit == 10) begin
-						cbit <= 0;
-					end
-					baud_counter <= 0;
 				end
 			end
 		end
