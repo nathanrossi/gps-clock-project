@@ -18,19 +18,19 @@ module uart_rx(clk, rst, rxi, data, valid);
 	parameter integer divisor = 0;
 	parameter integer startbits = 1;
 	parameter integer stopbits = 1;
+	parameter integer _framelen = bitwidth + startbits + stopbits;
 
 	input wire clk, rst;
 	input wire rxi;
 
-	reg [bitwidth + startbits + stopbits - 1:0] sdata = {(bitwidth + startbits + stopbits){1'b0}};
+	reg [_framelen - 1:0] sdata = {_framelen{1'b0}};
 	output reg valid = 0;
 	output wire [bitwidth - 1:0] data;
-	assign data = sdata[bitwidth + startbits - 1: startbits];
+	assign data = sdata[_framelen - stopbits - 1: startbits];
 
 	// buffer the rxi input at clk rate, which is faster than the divisor
 	// rate.
 	reg [1:0] rxi_buf = 2'b11;
-	always @(posedge clk) rxi_buf <= {rxi_buf[0], rxi};
 
 	reg integer baud_counter = 0;
 	reg integer cbit = 0;
@@ -38,11 +38,15 @@ module uart_rx(clk, rst, rxi, data, valid);
 		if (rst == 1) begin
 			rxi_buf <= 2'b11;
 			baud_counter <= 0;
-			sdata <= {bitwidth{1'b0}};
+			sdata <= {_framelen{1'b0}};
 			valid <= 0;
 			cbit <= 0;
 		end else begin
+			// buffer rxi
+			rxi_buf <= {rxi_buf[0], rxi};
+			// reset valid state
 			valid <= 0;
+
 			// detect falling edge of start bit
 			if (cbit == 0 && rxi_buf == 2'b10) begin
 				// start the frame
@@ -63,18 +67,18 @@ module uart_rx(clk, rst, rxi, data, valid);
 						`ifndef SYNTHESIS
 							$display("sample bit %b here, cbit %d, b %d, %b|%h|%b",
 								rxi_buf[0], cbit[31:1], baud_counter,
-								rxi_buf[0], sdata[bitwidth + startbits + stopbits - 1:2], sdata[0]);
+								rxi_buf[0], sdata[_framelen - 1:2], sdata[0]);
 						`endif
-						sdata <= {rxi_buf[0], sdata[bitwidth + startbits + stopbits - 1:1]};
+						sdata <= {rxi_buf[0], sdata[_framelen - 1:1]};
 					end else begin
 						// When the counter has hit the divisor twice
-						if (cbit == ((bitwidth + startbits + stopbits) * 2)) begin
+						if (cbit == ((_framelen) * 2)) begin
 							cbit <= 0;
 							valid <= 1;
 							`ifndef SYNTHESIS
 								$display("valid here, %b|%h|%b",
-									sdata[bitwidth + startbits + stopbits - 1],
-									sdata[bitwidth + startbits + stopbits - 2:1],
+									sdata[_framelen - 1],
+									sdata[_framelen - 2:1],
 									sdata[0]);
 							`endif
 						end
