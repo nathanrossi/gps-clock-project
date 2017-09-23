@@ -61,6 +61,7 @@ $(O)/tests/tests/display_driver_timing.vvp: display_driver.v
 $(O)/tests/tests/display_memory_simple.vvp: display_memory.v
 $(O)/tests/tests/spi_slave_simple.vvp: spi_slave.v
 $(O)/tests/tests/spi_controller_simple.vvp: spi_controller.v spi_slave.v
+$(O)/tests/tests/data_loader_simple.vvp: data_loader.v
 $(O)/tests/tests/top_load_spi.vvp: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/gamma_lookup_table_10.hex
 $(O)/tests/tests/top_run.vvp: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/gamma_lookup_table_10.hex
 
