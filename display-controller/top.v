@@ -45,15 +45,6 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 	assign a = row[2:0];
 	assign rgb = orgb;
 
-	input wire uart_rxi;
-	output reg uart_txo = 0;
-	// TODO: simple UART framebuffer write
-
-	// i/o for SPI interface
-	input wire spi_sclk, spi_ss, spi_mosi;
-	output wire spi_miso;
-	wire spi_ss_neg = ~spi_ss;
-
 	// handle memory flip during frame complete
 	always @(posedge sysclk) begin
 		if (frame_complete && (ready == 0)) begin
@@ -103,7 +94,11 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.rdata(pixel_data)
 	);
 
-	spi_controller #(
+	// loader signals from spi/uart recv
+	wire [7:0] loader_data;
+	wire loader_valid;
+
+	data_loader #(
 		.segments(segments),
 		.rows(rows),
 		.columns(columns),
@@ -111,16 +106,34 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 	) u_loader (
 		.clk(sysclk),
 		.rst(rst),
-		.sclk(spi_sclk),
-		.ss(spi_ss_neg),
-		.mosi(spi_mosi),
-		.miso(spi_miso),
+		.idata(loader_data),
+		.ivalid(loader_valid),
 		.wdata(pixel_load),
 		.wen(wen),
 		.wrow(wrow),
 		.wcol(wcol),
 		.ready(ready),
 		.loaded(loaded)
+	);
+
+	// i/o for UART interface
+	input wire uart_rxi;
+	output reg uart_txo = 0;
+
+	// i/o for SPI interface
+	input wire spi_sclk, spi_ss, spi_mosi;
+	output wire spi_miso;
+	wire spi_ss_neg = ~spi_ss;
+
+	uart_rx #(
+		.bitwidth(bitdepth),
+		.divisor(0)
+	) u_uart_rx (
+		.clk(sysclk),
+		.rst(rst),
+		.rxi(uart_rxi),
+		.data(loader_data),
+		.valid(loader_valid)
 	);
 
 	`ifdef SYNTHESIS

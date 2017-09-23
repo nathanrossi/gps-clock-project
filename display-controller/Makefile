@@ -46,7 +46,12 @@ all: bitstream tests
 # bitstream and dependencies
 bit: bitstream
 bitstream: $(O)/top.bin $(O)/top.asc $(O)/top.asc.timing.log
-$(O)/top.blif: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/top_pll_config.v $(O)/gamma_lookup_table_10.hex
+$(O)/top.blif: top.v \
+		display_driver.v display_memory.v \
+		data_loader.v \
+		spi_controller.v spi_slave.v \
+		uart/uart_rx.v \
+		$(O)/top_pll_config.v $(O)/gamma_lookup_table_10.hex
 
 # dependencies
 $(O)/tests/tests/display_color_encoder_10b.vvp: display_color_encoder.v $(O)/gamma_lookup_table_10.hex
@@ -82,7 +87,7 @@ $(O)/gamma_lookup_table_%.hex: scripts/gamma-correction-tables.py
 
 # Tests
 TESTS_BROKEN =
-TESTS_SKIP = tests/top tests/load-spi
+TESTS_SKIP = tests/top_run tests/top_load_spi
 TESTS =
 RUNTESTS = $(filter-out $(TESTS_BROKEN) $(TESTS_SKIP),$(TESTS))
 
