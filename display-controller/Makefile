@@ -71,6 +71,7 @@ $(O)/tests/tests/top_load_spi.vvp: top.v display_driver.v display_memory.v spi_c
 $(O)/tests/tests/top_run.vvp: top.v display_driver.v display_memory.v spi_controller.v spi_slave.v $(O)/gamma_lookup_table_10.hex
 
 $(O)/tests/uart/tests/uart_rx_pattern.vvp: uart/uart_rx.v
+$(O)/tests/uart/tests/uart_tx_pattern.vvp: uart/uart_tx.v
 
 # clean
 clean:
