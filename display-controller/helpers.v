@@ -10,7 +10,7 @@
 `define __gen_assert_compare(cmp, acmp, file, line, printtype, a0, a1) do begin \
 			if ((a0) acmp (a1)) begin \
 				$display("[@%8t %0s:%0d] assertion: 'a0' cmp 'a1' failed, printtype acmp printtype", $time, file, line, (a0), (a1)); \
-				$finish_and_return(1); \
+				#100 $finish_and_return(1); \
 			end else begin \
 				$display("[@%8t %0s:%0d] assertion: 'a0' cmp 'a1', printtype cmp printtype", $time, file, line, (a0), (a1)); \
 			end \
