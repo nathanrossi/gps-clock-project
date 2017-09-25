@@ -13,7 +13,10 @@
 
 module uart_tx(clk, rst, txo, data, valid);
 	parameter integer bitwidth = 8;
-	parameter integer divisor = 0; // the baud rate divisor of clk
+	parameter integer divisor = 32;
+	parameter integer startbits = 1;
+	parameter integer stopbits = 1;
+	parameter integer _framelen = bitwidth + startbits + stopbits;
 
 	input wire clk, rst;
 	output reg txo = 1;
@@ -21,33 +24,30 @@ module uart_tx(clk, rst, txo, data, valid);
 	input wire [bitwidth - 1:0] data;
 	input wire valid;
 
-	reg [bitwidth - 1:0] sdata = {bitwidth{1'b0}};
+	reg [_framelen - 2:0] sdata = {_framelen{1'b0}};
 
-	reg integer baud_counter = 0;
-	reg integer cbit = 0;
+	reg [$clog2(divisor) - 1:0] baud_counter = 0;
+	reg [$clog2(_framelen):0] cbit = 0;
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			baud_counter <= 0;
 			cbit <= 0;
-			sdata <= {bitwidth{1'b0}};
+			sdata <= {_framelen{1'b0}};
 			txo <= 1;
 		end else begin
 			if (cbit != 0) begin
 				baud_counter <= baud_counter + 1;
-				if (baud_counter >= divisor - 1) begin
+				if (baud_counter == divisor - 1) begin
 					// When the counter has hit the divisor
+					// shift sdata
+					sdata <= {1'b1, sdata[_framelen - 2:1]};
+					// next bit to txo
+					txo <= sdata[0];
+					// reset count
 					baud_counter <= 0;
 					cbit <= cbit + 1;
-					if (cbit == 9) begin
-						// stop bit
-						txo <= 1;
-					end else if (cbit == 10) begin
+					if (cbit == _framelen) begin
 						cbit <= 0;
-					end else begin
-						// data bits
-						txo <= sdata[0];
-						// shift for next
-						sdata <= {1'b0, sdata[7:1]};
 					end
 				end
 			end else begin
@@ -59,7 +59,7 @@ module uart_tx(clk, rst, txo, data, valid);
 					// mark start, and buffer data
 					baud_counter <= 0;
 					cbit <= 1;
-					sdata <= data;
+					sdata <= {{stopbits{1'b1}}, data, {startbits - 1{1'b0}}};
 					txo <= 0; // start bit
 				end
 			end

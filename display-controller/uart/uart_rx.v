@@ -15,7 +15,7 @@
 
 module uart_rx(clk, rst, rxi, data, valid);
 	parameter integer bitwidth = 8;
-	parameter integer divisor = 0;
+	parameter integer divisor = 32;
 	parameter integer startbits = 1;
 	parameter integer stopbits = 1;
 	parameter integer _framelen = bitwidth + startbits + stopbits;
@@ -32,8 +32,8 @@ module uart_rx(clk, rst, rxi, data, valid);
 	// rate.
 	reg [1:0] rxi_buf = 2'b11;
 
-	reg integer baud_counter = 0;
-	reg integer cbit = 0;
+	reg [$clog2(divisor) - 1:0] baud_counter = 0;
+	reg [$clog2(_framelen * 2):0] cbit = 0;
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			rxi_buf <= 2'b11;

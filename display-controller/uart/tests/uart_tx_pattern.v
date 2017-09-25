@@ -4,7 +4,7 @@ module uart_tx_pattern;
 	reg clk = 0, rst = 0;
 	reg [7:0] data;
 	reg valid;
-	wire txo = 0;
+	wire txo;
 
 	uart_tx #(
 		.divisor(32)
