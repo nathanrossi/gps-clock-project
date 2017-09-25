@@ -32,6 +32,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 	wire frame_complete;
 
 	reg mem_flip = 0;
+	reg frame_flipped = 0;
 	reg ready = 1; // initially ready
 	wire wen, loaded;
 	wire [(bitdepth * 3 * segments) - 1:0] pixel_load;
@@ -47,12 +48,14 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 
 	// handle memory flip during frame complete
 	always @(posedge sysclk) begin
+		frame_flipped <= 0;
 		if (frame_complete && (ready == 0)) begin
 			// was not ready, thus must have a frame loaded, so lets flip it
 			// in. And because we have flipped it in, we are ready to accept
 			// another frame to be loaded
 			mem_flip <= ~mem_flip;
 			ready <= 1;
+			frame_flipped <= 1;
 		end else if (ready && loaded) begin
 			// latch the loaded stated and become non-ready
 			ready <= 0;
@@ -118,7 +121,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 
 	// i/o for UART interface
 	input wire uart_rxi;
-	output reg uart_txo = 0;
+	output wire uart_txo;
 
 	// i/o for SPI interface
 	input wire spi_sclk, spi_ss, spi_mosi;
@@ -134,6 +137,17 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.rxi(uart_rxi),
 		.data(loader_data),
 		.valid(loader_valid)
+	);
+
+	uart_tx #(
+		.bitwidth(bitdepth),
+		.divisor((`TARGET_FREQ * 1000000) / 115200)
+	) u_uart_tx (
+		.clk(sysclk),
+		.rst(rst),
+		.txo(uart_txo),
+		.data('he0),
+		.valid(frame_flipped)
 	);
 
 	`ifdef SYNTHESIS
