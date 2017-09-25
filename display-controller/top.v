@@ -130,7 +130,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 
 	uart_rx #(
 		.bitwidth(bitdepth),
-		.divisor(0)
+		.divisor((`TARGET_FREQ * 1000000) / 115200 / 2)
 	) u_uart_rx (
 		.clk(sysclk),
 		.rst(rst),
