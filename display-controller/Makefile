@@ -50,7 +50,7 @@ $(O)/top.blif: top.v \
 		display_driver.v display_memory.v \
 		data_loader.v \
 		spi_controller.v spi_slave.v \
-		uart/uart_rx.v \
+		uart/uart_rx.v uart/uart_tx.v \
 		$(O)/top_pll_config.v $(O)/gamma_lookup_table_10.hex
 
 # dependencies
@@ -73,6 +73,19 @@ $(O)/tests/tests/top_run.vvp: top.v display_driver.v display_memory.v spi_contro
 $(O)/tests/uart/tests/uart_rx_pattern.vvp: uart/uart_rx.v
 $(O)/tests/uart/tests/uart_tx_pattern.vvp: uart/uart_tx.v
 $(O)/tests/uart/tests/uart_loopback.vvp: uart/uart_rx.v uart/uart_tx.v
+
+setup-usage = \
+	$(foreach module,$(patsubst $(S)/%.v,%,$(wildcard $(S)/$(1)/*.v)), \
+		$(eval MODULES += $(module)) \
+		$(eval $(O)/usage/$(module).blif: $(module).v))
+
+$(call setup-usage,.)
+$(call setup-usage,uart)
+
+usages: $(foreach module,$(MODULES),$(O)/usage/$(module).blif)
+	$(Q)for i in $(foreach log,$^,$(log).synthesis.log); do \
+		cat $$i | sed '/^[[:digit:]\.]* Printing.*$$/,/^[[:digit:]].*$$/{//!b};d'; \
+	done
 
 # clean
 clean:
@@ -125,7 +138,7 @@ $(O)/tests/%.run.log: $(O)/tests/%.vvp
 
 # frequencies for the top level design (in MHz)
 SOURCE_FREQ = 12
-TARGET_FREQ = 48
+TARGET_FREQ = 24
 TARGET_DEVICE = 1k
 TARGET_DEVICE_VARIANT = hx
 TARGET_PACKAGE = tq144
@@ -138,13 +151,15 @@ $(O)/%_pll_config.v:
 	$(call echo-report,PLL Configuration for $@,$@.log) $(QSH)
 
 # synth, pnr, bitmap
-$(O)/%.blif: %.v
+$(O)/%.blif: FLAGS = -DSYNTHESIS -DTARGET_FREQ=$(TARGET_FREQ)
+$(O)/%.blif:
 	$(call safe-dir)
 	$(call echo-info,SYNTH,$*)
 	$(Q)cd $(O) && $(YOSYS) \
-		-p "read_verilog -defer -I$(abspath $(O)) -DSYNTHESIS $(abspath $(filter %.v,$^)); \
-			synth_ice40 -top $* -blif $(abspath $@)" \
+		-p "read_verilog -defer -I$(abspath $(O)) $(FLAGS) $(abspath $(filter %.v,$^)); \
+			synth_ice40 -top $(notdir $*) -blif $(abspath $@)" \
 			> $@.synthesis.log 2>&1
+	$(Q)cat $@.synthesis.log | sed '/^[[:digit:]\.]* Printing.*$$/,/^[[:digit:]].*$$/{//!b};d'
 
 $(O)/%.asc: $(O)/%.blif %.pcf
 	$(call safe-dir)
@@ -157,6 +172,11 @@ $(O)/%.asc: $(O)/%.blif %.pcf
 		$(abspath $(firstword $(filter %.blif,$^))) \
 		> $@.log 2>&1
 	$(call echo-report,Place and Route report for $*,$@.log) $(QSH)
+	$(Q)echo ""; echo "=== $* (packed) ==="; echo ""
+	$(Q)cat $@.log | sed '/^After packing:$$/,/^$$/{//!b};d'
+	$(Q)echo ""; echo "=== $* (placed) ==="; echo ""
+	$(Q)cat $@.log | sed '/^After placement:$$/,/^$$/{//!b};d'
+	$(Q)echo ""
 
 $(O)/%.asc.timing.log: $(O)/%.asc $(S)/%.pcf
 	$(call safe-dir)
