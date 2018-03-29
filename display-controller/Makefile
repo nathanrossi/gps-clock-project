@@ -23,16 +23,15 @@ echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat
 echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) $(if $(filter $(V),2),,| egrep assertion\|info); echo '-------------------- $(1) --------------------'"
 
 # define variables for commands
-# if not found, use BASEPROGS
-BASEPROGS = /home/nathan/fpga-ice40
-IVERILOG ?= $(call has-command,iverilog)
-VVP ?= $(call has-command,vvp)
-YOSYS ?= $(call has-command,yosys,$(BASEPROGS)/yosys/yosys)
-ARACHNEPNR ?= $(call has-command,arachne-pnr,$(BASEPROGS)/arachne-pnr/bin/arachne-pnr)
-ICEPACK ?= $(call has-command,icepack,$(BASEPROGS)/icestorm/icepack/icepack)
-ICETIME ?= $(call has-command,icetime,$(BASEPROGS)/icestorm/icetime/icetime)
-ICEPLL ?= $(call has-command,icepll,$(BASEPROGS)/icestorm/icepll/icepll)
-ICEBOX ?= $(call has-directory,/usr/share/icebox,$(BASEPROGS)/icestorm/icebox)
+IVL_PATH ?= $(abspath $(dir $(realpath $(call has-command,iverilog)))/../lib/ivl)
+IVERILOG ?= $(call has-command,iverilog) -B$(IVL_PATH)
+VVP ?= $(call has-command,vvp) -M$(IVL_PATH)
+YOSYS ?= $(call has-command,yosys)
+ARACHNEPNR ?= $(call has-command,arachne-pnr)
+ICEPACK ?= $(call has-command,icepack)
+ICETIME ?= $(call has-command,icetime)
+ICEPLL ?= $(call has-command,icepll)
+ICEBOX ?= $(abspath $(dir $(realpath $(call has-command,icepack)))/../share/icebox)
 
 # output dir
 O ?= $(shell realpath obj)
