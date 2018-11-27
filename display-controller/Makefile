@@ -52,7 +52,7 @@ $(O)/board_icestick.bin: $(O)/board_icestick.nextpnr.asc
 $(O)/board_icestick.blif $(O)/board_icestick.yosys.json: board_icestick.v $(O)/board_icestick_pll_config.v $(DEFAULT_MODULES)
 
 bitstream-up5k: $(O)/board_up5k.bin
-$(O)/board_up5k.bin: SOURCE_FREQ = 12
+$(O)/board_up5k.bin: SOURCE_FREQ = 48
 $(O)/board_up5k.bin: TARGET_DEVICE = up5k
 $(O)/board_up5k.bin: TARGET_PACKAGE = sg48
 $(O)/board_up5k.bin: $(O)/board_up5k.nextpnr.asc

@@ -1,6 +1,4 @@
 
-set_io clk 35 # ICE_CLK 46B_G0
-
 set_io header_b[0] 23 # 37A
 set_io header_b[1] 25 # 36B
 set_io header_b[2] 26 # 39A

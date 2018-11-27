@@ -1,15 +1,24 @@
-module board_up5k(clk, header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
-	input wire clk;
-	input wire [12:0] header_b;
+module board_up5k(header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
+	// panel
+	output wire [12:0] header_b;
+	// spi
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output wire spi_miso;
+
+	wire int_clk;
+	// high freq 48MHz internal osc
+	SB_HFOSC u_hf_osc (
+		.CLKHFPU(1'b1),
+		.CLKHFEN(1'b1),
+		.CLKHF(int_clk)
+	);
 
 	// PLL clock outputs
 	wire pll_locked;
 	wire pll_clk;
 	pll u_pll (
 		.locked(pll_locked),
-		.clock_in(clk),
+		.clock_in(int_clk),
 		.clock_out(pll_clk),
 	);
 
