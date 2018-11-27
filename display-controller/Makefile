@@ -41,6 +41,7 @@ all: bitstream-icestick bitstream-up5k
 
 # frequencies for the top level design (in MHz)
 TARGET_FREQ = 24
+DEFAULT_MODULES = *.v uart/*.v
 
 # bitstream and dependencies
 bitstream-icestick: $(O)/board_icestick.bin
@@ -48,14 +49,14 @@ $(O)/board_icestick.bin: SOURCE_FREQ = 12
 $(O)/board_icestick.bin: TARGET_DEVICE = hx1k
 $(O)/board_icestick.bin: TARGET_PACKAGE = tq144
 $(O)/board_icestick.bin: $(O)/board_icestick.nextpnr.asc
-$(O)/board_icestick.blif $(O)/board_icestick.yosys.json: board_icestick.v $(O)/board_icestick_pll_config.v *.v
+$(O)/board_icestick.blif $(O)/board_icestick.yosys.json: board_icestick.v $(O)/board_icestick_pll_config.v $(DEFAULT_MODULES)
 
 bitstream-up5k: $(O)/board_up5k.bin
 $(O)/board_up5k.bin: SOURCE_FREQ = 12
 $(O)/board_up5k.bin: TARGET_DEVICE = up5k
 $(O)/board_up5k.bin: TARGET_PACKAGE = sg48
 $(O)/board_up5k.bin: $(O)/board_up5k.nextpnr.asc
-$(O)/board_up5k.blif $(O)/board_up5k.yosys.json: board_up5k.v $(O)/board_up5k_pll_config.v *.v
+$(O)/board_up5k.blif $(O)/board_up5k.yosys.json: board_up5k.v $(O)/board_up5k_pll_config.v $(DEFAULT_MODULES)
 
 # gamma dep
 display_color_encoder.v: $(O)/gamma_lookup_table_10.hex
