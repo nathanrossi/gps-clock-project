@@ -27,12 +27,12 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 
 	// Color Correction (gamma correction)
 	input wire [((bitwidth * 3) * segments) - 1:0] pixel;
-	output reg [(3 * segments) - 1:0] rgb = 0;
-	output reg oe = 0, lat = 0, oclk = 0;
+	output reg [(3 * segments) - 1:0] rgb;
+	output reg oe, lat, oclk;
 
 	// row, column counter
-	output reg [$clog2(rows) - 1:0] row = 0;
-	integer column_counter = 0;
+	output reg [$clog2(rows) - 1:0] row;
+	integer column_counter;
 	output wire [$clog2(columns) - 1:0] column;
 	assign column = column_counter[0 +:$clog2(columns)];
 

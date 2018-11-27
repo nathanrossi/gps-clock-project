@@ -1,7 +1,11 @@
 
 module top(clk, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_ss, spi_mosi, spi_miso, leds, debug);
 	input wire clk;
-	reg rst = 0;
+	reg rst = 1;
+
+	always @(posedge clk) begin
+		rst <= 0;
+	end
 
 	output reg [7:0] debug = 0;
 	output reg [4:0] leds = 5'b10000;
