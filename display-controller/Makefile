@@ -16,8 +16,8 @@ echo-fail = printf " %-12s  $(call tput,setaf 1)%4s$(call tput,sgr0)  %s\n" "$(1
 echo-report = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2); echo '-------------------- $(1) --------------------'"
 echo-report-test-assert = @sh -c "echo '-------------------- $(1) --------------------'; cat $(2) $(if $(filter $(V),2),,| egrep assertion\|info); echo '-------------------- $(1) --------------------'"
 
-echo-pf-check = ; if [ $$? = 0 ]; then $(call echo-pass,$(1),$(2)); else $(call echo-fail,$(1),$(2)); fi
-log-report = > $(1) 2>&1; if [ $$? != 0 ]; then cat $(1); exit $$?; fi
+echo-pf-check = ; STATUS=$$?; if [ $$STATUS = 0 ]; then $(call echo-pass,$(1),$(2)); else $(call echo-fail,$(1),$(2)); fi
+log-report = > $(1) 2>&1; STATUS=$$?; if [ $$STATUS != 0 ]; then cat $(1); exit $$STATUS; fi
 
 # define variables for commands
 IVL_PATH ?= $(abspath $(dir $(realpath $(call has-command,iverilog)))/../lib/ivl)
@@ -160,8 +160,9 @@ $(O)/%.blif $(O)/%.yosys.json:
 		-p " \
 			read_verilog -defer -I$(abspath $(O)) $(FLAGS) $(abspath $(filter %.v,$^)); \
 			synth_ice40 -top $(notdir $*) -json $(abspath $(O)/$*.yosys.json) -blif $(abspath $(O)/$*.blif); \
-		" $(call log-report,$@.synthesis.log)
-	$(Q)cat $@.synthesis.log | sed '/^[[:digit:]\.]* Printing.*$$/,/^[[:digit:]].*$$/{//!b};d'
+		" $(call log-report,$*.synthesis.log)
+	-$(Q)cat $(O)/$*.synthesis.log | grep "^Warning:"
+	$(Q)cat $(O)/$*.synthesis.log | sed '/^[[:digit:]\.]* Printing.*$$/,/^[[:digit:]].*$$/{//!b};d'
 
 $(O)/%.arachne.asc: $(O)/%.blif %.pcf
 	$(call safe-dir)
@@ -183,7 +184,7 @@ $(O)/%.arachne.asc: $(O)/%.blif %.pcf
 		-P $(TARGET_PACKAGE) \
 		-p $(abspath $(firstword $(filter %.pcf,$^))) \
 		-c $(TARGET_FREQ) $@) \
-		$(call log-report,$@.log) \
+		$(call log-report,$@..timing.log) \
 		$(call echo-pf-check,TIMING,$*)
 
 $(O)/%.nextpnr.asc: $(O)/%.yosys.json %.pcf
@@ -191,6 +192,8 @@ $(O)/%.nextpnr.asc: $(O)/%.yosys.json %.pcf
 	$(call echo-info,PNR nextpnr,$*)
 	$(Q)$(NEXTPNR) \
 		--$(TARGET_DEVICE) \
+		--package $(TARGET_PACKAGE) \
+		--freq $(TARGET_FREQ) \
 		--json $(abspath $(firstword $(filter %.yosys.json,$^))) \
 		--pcf $(abspath $(firstword $(filter %.pcf,$^))) \
 		--asc $@ \
@@ -198,11 +201,12 @@ $(O)/%.nextpnr.asc: $(O)/%.yosys.json %.pcf
 	$(Q)echo ""; echo "=== $* ==="; echo ""
 	$(Q)cat $@.log | sed '/^Info: Device utilisation:$$/,/^$$/{//!b};d' | sed 's/^Info://'
 	$(Q)echo ""
-	$(Q)$(call log-report,$@.timing.log,$(ICETIME) \
+	$(Q)$(ICETIME) \
 		-d $(TARGET_DEVICE) \
 		-P $(TARGET_PACKAGE) \
 		-p $(abspath $(firstword $(filter %.pcf,$^))) \
-		-c $(TARGET_FREQ) $@) \
+		-c $(TARGET_FREQ) $@ \
+		$(call log-report,$@.timing.log) \
 		$(call echo-pf-check,TIMING,$*)
 
 $(O)/%.bin:
