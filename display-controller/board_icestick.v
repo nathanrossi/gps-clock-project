@@ -19,7 +19,9 @@ module board_icestick(clk, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, leds, debu
 		.clock_out(pll_clk),
 	);
 
-	top u_top (
+	top #(
+		.if_uart(1)
+	) u_top (
 		.clk(pll_clk),
 
 		.leds(leds),

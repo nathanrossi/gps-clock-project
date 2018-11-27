@@ -13,7 +13,9 @@ module board_up5k(clk, header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
 		.clock_out(pll_clk),
 	);
 
-	top u_top (
+	top #(
+		.if_spi(1)
+	) u_top (
 		.clk(pll_clk),
 
 		// led panel attached to header_c
