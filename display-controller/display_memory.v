@@ -9,7 +9,7 @@ module display_memory(clk, flip, wen, wrow, wcol, rrow, rcol, wdata, rdata);
 	input wire [$clog2(rows)-1:0] wrow, rrow;
 	input wire [$clog2(columns)-1:0] wcol, rcol;
 	input wire [(width * segments) - 1:0] wdata;
-	output reg [(width * segments) - 1:0] rdata = {(width * segments){1'b0}};
+	output reg [(width * segments) - 1:0] rdata;
 
 	reg [(width * segments) - 1:0] memory[0:(2 ** ($clog2(rows) + $clog2(columns) + 1)) - 1];
 	integer ik;
