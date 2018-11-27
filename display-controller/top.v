@@ -1,18 +1,10 @@
 
-module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_ss, spi_mosi, spi_miso, debug);
+module top(clk, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_ss, spi_mosi, spi_miso, leds, debug);
 	input wire clk;
 	reg rst = 0;
 
 	output reg [7:0] debug = 0;
 	output reg [4:0] leds = 5'b10000;
-
-	// PLL clock outputs
-	wire pll_locked;
-	wire pll_clk;
-
-	// internal clk
-	wire sysclk;
-	assign sysclk = pll_clk;
 
 	// display parameters
 	parameter integer segments = 2;
@@ -47,7 +39,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 	assign rgb = orgb;
 
 	// handle memory flip during frame complete
-	always @(posedge sysclk) begin
+	always @(posedge clk) begin
 		frame_flipped <= 0;
 		if (frame_complete && (ready == 0)) begin
 			// was not ready, thus must have a frame loaded, so lets flip it
@@ -68,7 +60,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.columns(columns),
 		.bitwidth(bitdepth)
 	) u_driver (
-		.clk(sysclk),
+		.clk(clk),
 		.rst(rst),
 		.row(row),
 		.column(column),
@@ -86,7 +78,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.columns(columns),
 		.width(bitdepth * 3)
 	) u_memory (
-		.clk(sysclk),
+		.clk(clk),
 		.flip(mem_flip),
 		.wen(wen),
 		.wrow(wrow),
@@ -107,7 +99,7 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.columns(columns),
 		.bitwidth(bitdepth)
 	) u_loader (
-		.clk(sysclk),
+		.clk(clk),
 		.rst(rst),
 		.idata(loader_data),
 		.ivalid(loader_valid),
@@ -119,20 +111,21 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.loaded(loaded)
 	);
 
-	// i/o for UART interface
-	input wire uart_rxi;
-	output wire uart_txo;
-
 	// i/o for SPI interface
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output wire spi_miso;
 	wire spi_ss_neg = ~spi_ss;
 
+	// i/o for UART interface
+	input wire uart_rxi;
+	output wire uart_txo;
+
+	/*
 	uart_rx #(
 		.bitwidth(bitdepth),
 		.divisor((`TARGET_FREQ * 1000000) / 115200 / 2)
 	) u_uart_rx (
-		.clk(sysclk),
+		.clk(clk),
 		.rst(rst),
 		.rxi(uart_rxi),
 		.data(loader_data),
@@ -143,24 +136,12 @@ module top(clk, leds, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_s
 		.bitwidth(bitdepth),
 		.divisor((`TARGET_FREQ * 1000000) / 115200)
 	) u_uart_tx (
-		.clk(sysclk),
+		.clk(clk),
 		.rst(rst),
 		.txo(uart_txo),
 		.data('he0),
 		.valid(frame_flipped)
 	);
-
-	`ifdef SYNTHESIS
-		pll u_pll (
-			.locked(pll_locked),
-			.clock_in(clk),
-			.clock_out(pll_clk),
-		);
-	`else
-		// in simulation, skip the PLL
-		assign pll_clk = clk;
-		assign pll_locked = 1'b1;
-	`endif
-
+	*/
 endmodule
 
