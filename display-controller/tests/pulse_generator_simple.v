@@ -21,8 +21,8 @@ module pulse_generator_simple;
 	always
 		# 5 clk = !clk;
 
+	integer i = 0, j = 0, k = 0;
 	initial begin
-		integer i = 0, j = 0, k = 0;
 		`setup_vcd(pulse_generator_simple);
 
 		rst <= 0;
