@@ -118,34 +118,51 @@ module top(clk, rgb, a, oe, lat, oclk, uart_txo, uart_rxi, spi_sclk, spi_ss, spi
 	// i/o for SPI interface
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output wire spi_miso;
-	wire spi_ss_neg = ~spi_ss;
 
 	// i/o for UART interface
 	input wire uart_rxi;
 	output wire uart_txo;
 
-	/*
-	uart_rx #(
-		.bitwidth(bitdepth),
-		.divisor((`TARGET_FREQ * 1000000) / 115200 / 2)
-	) u_uart_rx (
-		.clk(clk),
-		.rst(rst),
-		.rxi(uart_rxi),
-		.data(loader_data),
-		.valid(loader_valid)
-	);
+	parameter integer if_uart = 0;
+	parameter integer if_spi = 0;
 
-	uart_tx #(
-		.bitwidth(bitdepth),
-		.divisor((`TARGET_FREQ * 1000000) / 115200)
-	) u_uart_tx (
-		.clk(clk),
-		.rst(rst),
-		.txo(uart_txo),
-		.data('he0),
-		.valid(frame_flipped)
-	);
-	*/
+	generate
+		if (if_uart == 1) begin
+			uart_rx #(
+				.bitwidth(bitdepth),
+				.divisor((`TARGET_FREQ * 1000000) / 115200 / 2)
+			) u_uart_rx (
+				.clk(clk),
+				.rst(rst),
+				.rxi(uart_rxi),
+				.data(loader_data),
+				.valid(loader_valid)
+			);
+
+			uart_tx #(
+				.bitwidth(bitdepth),
+				.divisor((`TARGET_FREQ * 1000000) / 115200)
+			) u_uart_tx (
+				.clk(clk),
+				.rst(rst),
+				.txo(uart_txo),
+				.data('he0),
+				.valid(frame_flipped)
+			);
+		end else if (if_spi == 1) begin
+			spi_slave #(
+				.ss_active(0)
+			) u_spi_slave (
+				.clk(clk),
+				.rst(rst),
+				.sclk(spi_sclk),
+				.ss(spi_ss),
+				.mosi(spi_mosi),
+				.miso(spi_miso),
+				.data(loader_data),
+				.valid(loader_valid)
+			);
+		end
+	endgenerate
 endmodule
 
