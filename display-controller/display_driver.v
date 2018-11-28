@@ -125,16 +125,17 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 					if (load_delay_counter >= load_delay) begin
 						fsm1_state <= _fsm1_rgbbits;
 						load_delay_counter <= 0;
+						column_counter <= column_counter + 1;
 					end else begin
 						load_delay_counter <= load_delay_counter + 1;
 					end
 				end
 				_fsm1_rgbbits: begin
 					fsm1_state <= _fsm1_push;
-					column_counter <= column_counter + 1;
 				end
 				_fsm1_push: begin
 					fsm1_state <= _fsm1_push_hold;
+					column_counter <= column_counter + 1;
 				end
 				_fsm1_push_hold: begin
 					if (column_counter >= columns) begin
@@ -142,7 +143,6 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 						column_counter <= 0;
 					end else begin
 						fsm1_state <= _fsm1_push;
-						column_counter <= column_counter + 1;
 					end
 					load_complete <= 0;
 				end
@@ -193,6 +193,7 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	always @(posedge clk) begin
 		if (rst == 1) begin
 			lat <= 0;
+			oe <= 0;
 			cycle <= 0;
 			cycle_complete <= 0;
 			push_row <= 0;
