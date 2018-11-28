@@ -100,7 +100,8 @@ clean:
 	$(call echo-info,CLEAN,cleaning...)
 	-@rm -rf $(O)/
 
-.PHONY: all clean tests bit bitstream $(TESTS)
+.PHONY: all clean tests bit bitstream $(TESTS) FORCE
+FORCE:
 
 # Gamma generation
 $(O)/gamma_lookup_table_%.hex: scripts/gamma-correction-tables.py
@@ -128,7 +129,7 @@ $(foreach test,$(TESTS),$(eval $(test): $(O)/tests/$(test).run.log))
 # iverilog
 $(O)/tests/%.vvp: TEST_NAME = $*
 $(O)/tests/%.vvp: FLAGS = -DSIMULATION -DTARGET_FREQ=$(TARGET_FREQ)
-$(O)/tests/%.vvp:
+$(O)/tests/%.vvp: FORCE
 	$(call safe-dir)
 	$(call echo-info,SIMU,$(TEST_NAME))
 	$(Q)cd $(O) && $(IVERILOG) \
