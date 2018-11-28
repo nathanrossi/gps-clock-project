@@ -127,13 +127,14 @@ $(foreach test,$(TESTS),$(eval $(test): $(O)/tests/$(test).run.log))
 
 # iverilog
 $(O)/tests/%.vvp: TEST_NAME = $*
+$(O)/tests/%.vvp: FLAGS = -DSIMULATION -DTARGET_FREQ=$(TARGET_FREQ)
 $(O)/tests/%.vvp:
 	$(call safe-dir)
 	$(call echo-info,SIMU,$(TEST_NAME))
 	$(Q)cd $(O) && $(IVERILOG) \
 		-o $(abspath $@) \
-		-DSIMULATION \
-		-DVCD_FILE=$(abspath $(patsubst %.vvp,%.vcd,$@)) \
+		$(FLAGS) \
+		-DVCD_FILE=\"$(abspath $(O)/tests/$*.vcd)\" \
 		-g2012 -I$(abspath $(S)) -I$(abspath $(O)) \
 		$(abspath $(filter %.v,$^))
 

@@ -1,8 +1,8 @@
 
 `define setup_vcd(test) do begin \
 			`ifdef VCD_FILE \
-				$display({"setting up vcd file @ ", `"`VCD_FILE`"}); \
-				$dumpfile(`"`VCD_FILE`"); \
+				$display({"setting up vcd file @ ", `VCD_FILE}); \
+				$dumpfile(`VCD_FILE); \
 				$dumpvars(0, test); \
 			`endif \
 		end while (0)
