@@ -22,10 +22,30 @@ module board_up5k(header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
 		.clock_out(pll_clk),
 	);
 
+	// wait some time before clearing reset after pll lock
+	reg rst;
+	reg integer rst_counter;
+	always @(posedge pll_clk) begin
+		if (pll_locked == 0) begin
+			rst_counter <= 0;
+			rst <= 1;
+		end else begin
+			if (rst_counter[5] == 1) begin
+				rst <= 0;
+			end else begin
+				rst <= 1;
+				rst_counter <= rst_counter + 1;
+			end
+		end
+	end
+
+	assign header_b[12] = pll_clk;
+
 	top #(
 		.if_spi(1)
 	) u_top (
 		.clk(pll_clk),
+		.rst(rst),
 
 		// led panel attached to header_c
 		.rgb(header_b[5:0]),
