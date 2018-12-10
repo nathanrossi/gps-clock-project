@@ -1,6 +1,4 @@
-module board_up5k(header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
-	// panel
-	output wire [12:0] header_b;
+module board_up5k(r, g, b, a, clk, lat, oe, spi_sclk, spi_ss, spi_mosi, spi_miso);
 	// spi
 	input wire spi_sclk, spi_ss, spi_mosi;
 	output wire spi_miso;
@@ -39,7 +37,15 @@ module board_up5k(header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
 		end
 	end
 
-	assign header_b[12] = pll_clk;
+	output wire [1:0] r;
+	output wire [1:0] g;
+	output wire [1:0] b;
+	output wire [3:0] a;
+	output wire clk;
+	output wire lat;
+	output wire oe;
+	// sink a[3] to gnd unless its used
+	assign a[3] = 0'b0;
 
 	top #(
 		.if_spi(1)
@@ -48,11 +54,11 @@ module board_up5k(header_b, spi_sclk, spi_ss, spi_mosi, spi_miso);
 		.rst(rst),
 
 		// led panel attached to header_c
-		.rgb(header_b[5:0]),
-		.a(header_b[8:6]),
-		.oe(header_b[9]),
-		.lat(header_b[10]),
-		.oclk(header_b[11]),
+		.rgb({r[0], g[0], b[0], r[1], g[1], b[1]}),
+		.a(a[2:0]),
+		.oclk(clk),
+		.lat(lat),
+		.oe(oe),
 
 		// spi attached to FT2232H
 		.spi_sclk(spi_sclk),
