@@ -33,8 +33,8 @@ module data_loader(clk, rst, idata, ivalid, wdata, wen, wrow, wcol, ready, loade
 	output reg [$clog2(rows) - 1:0] wrow = 0;
 	output reg [$clog2(columns) - 1:0] wcol = 0;
 
-	reg integer column = 0;
-	reg integer channel = 0;
+	integer column = 0;
+	integer channel = 0;
 	output reg wen = 0;
 
 	input wire ready;
@@ -44,7 +44,7 @@ module data_loader(clk, rst, idata, ivalid, wdata, wen, wrow, wcol, ready, loade
 		_cmd_wait = 0,
 		_cmd_load_row = 1;
 
-	reg integer cmd = 0;
+	integer cmd = 0;
 	reg dummy_write = 0;
 
 	output reg loaded = 0;

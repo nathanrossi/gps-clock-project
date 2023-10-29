@@ -28,7 +28,7 @@ module display_driver_pulse_generator (clk, rst, go, complete, full_complete, se
 	input wire go;
 	output reg complete = 0;
 	output reg full_complete = 0;
-	reg integer pulse_bit = 0;
+	integer pulse_bit = 0;
 	reg [bitwidth - 1:0] pulse_length = {bitwidth{1'b1}};
 	reg [bitwidth - 1:0] pulse_counter = {bitwidth{1'b0}};
 	always @(posedge clk) begin

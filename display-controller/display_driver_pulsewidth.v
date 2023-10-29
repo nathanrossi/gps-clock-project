@@ -105,7 +105,7 @@ module display_driver_pulsewidth (clk, rst, frame_complete, row, column, pixel, 
 	assign oe = ((fsm == _fsm_row_wait) && pulse_go);
 
 	reg pulse_full_completed = 0;
-	reg integer fsm = 0;
+	integer fsm = 0;
 	parameter
 		_fsm_wait = 0,
 		_fsm_irow_load = 1,

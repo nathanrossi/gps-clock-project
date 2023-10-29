@@ -42,7 +42,7 @@ module display_driver_row_loader (clk, rst, load, complete, oclk, column, pipe);
 	output reg oclk = 0;
 	output reg pipe = 0;
 
-	reg integer prepared = 0;
+	integer prepared = 0;
 	output wire [$clog2(columns) - 1:0] column;
 	assign column = prepared[$clog2(columns) - 1:0];
 

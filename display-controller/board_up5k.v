@@ -22,7 +22,7 @@ module board_up5k(r, g, b, a, clk, lat, oe, spi_sclk, spi_ss, spi_mosi, spi_miso
 
 	// wait some time before clearing reset after pll lock
 	reg rst;
-	reg integer rst_counter;
+	integer rst_counter;
 	always @(posedge pll_clk) begin
 		if (pll_locked == 0) begin
 			rst_counter <= 0;
@@ -45,7 +45,7 @@ module board_up5k(r, g, b, a, clk, lat, oe, spi_sclk, spi_ss, spi_mosi, spi_miso
 	output wire lat;
 	output wire oe;
 	// sink a[3] to gnd unless its used
-	assign a[3] = 0'b0;
+	assign a[3] = 1'b0;
 
 	top #(
 		.if_spi(1)

@@ -14,8 +14,8 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 	output reg [$clog2(rows) - 1:0] wrow = 0;
 	output reg [$clog2(columns) - 1:0] wcol = 0;
 
-	reg integer column = 0;
-	reg integer channel = 0;
+	integer column = 0;
+	integer channel = 0;
 	output reg wen = 0;
 
 	input wire ready;
@@ -27,7 +27,7 @@ module spi_controller(clk, rst, sclk, ss, mosi, miso, wdata, wen, wrow, wcol, re
 		_cmd_end = 2;
 
 	reg started = 0;
-	reg integer cmd = 0;
+	integer cmd = 0;
 	output reg loaded = 0;
 	reg complete = 0;
 

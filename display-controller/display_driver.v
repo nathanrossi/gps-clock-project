@@ -88,7 +88,7 @@ module display_driver (clk, rst, frame_complete, row, column, pixel, rgb, oe, la
 	//   state which allows for the states to trigger inversions of the oclk.
 	//
 	integer fsm1_state = 0;
-	reg integer load_delay_counter = 0;
+	integer load_delay_counter = 0;
 	reg load_complete = 0;
 	parameter
 		_fsm1_hold = 0,
